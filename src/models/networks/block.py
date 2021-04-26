@@ -8,10 +8,10 @@ class AADResBlk(nn.Module):
     def __init__(self, opt):
         super().__init__()
         self.opt = opt
-        num_adds = opt["num_adds"]
+        num_aads = opt["num_aads"]
         self.model = []
 
-        for n in range(num_adds):
+        for n in range(num_aads):
             self.model.append(nn.sequential(
                 AADeNorm(opt["AADeNorm"][n]),
                 nn.ReLU(),
