@@ -3,15 +3,33 @@ from torch import nn
 
 
 from models.networks.block import AADResBlk
+from models.networks.encoder import AttrEncoder, ArcFace
 
 
 class AEINet(nn.Module):
 
     """Combine AADGenerator, Attribute Encoder, and Identity Encoder together.
     """
-
-    def __init__(self):
+    def __init__(self, opt):
         super().__init__()
+        self.attr_encoder = AttrEncoder(opt["attr_encoder"])
+        self.idt_encoder = ArcFace(opt["idt_encoder"])
+        self.generator = AADGenerator(opt["generator"])
+
+
+    def forward(self, xs, xt):
+        """Summary
+        
+        Args:
+            xs (TYPE): source image
+            xt (TYPE): target image
+        Returns:
+            TYPE: Description
+        """
+        idt = self.idt_encoder(xs)
+        _ = self.attr_encoder(xt)
+        attr = self.attr_encoder.get_decoder_feature_maps()
+        return self.generator(idt, idt, attr)
 
 
 class AADGenerator(nn.Module):
