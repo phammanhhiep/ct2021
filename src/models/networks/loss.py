@@ -9,17 +9,37 @@ logger = logging.getLogger(__name__)
 
 
 class AEINetLoss(nn.Module):
-    def __init__(self, opt): pass
+
+    """The loss function of the generator
+    """
+
+    def __init__(self, opt):
+        super().__init__()
+        self.adv_criterion = MultiScaleGanLoss(opt["adv_loss"])
+        self.attr_criterion = AttrLoss(opt["attr_loss"])
+        self.rec_criterion = RecLoss(opt["rec_loss"])
+        self.idt_criterion = IdtLoss(opt["idt_loss"])
+        self.attr_w, self.rec_w, self.idt_w = opt["loss_weights"]
+
+
+    def forward(self, xt, y, xt_features, y_attr_features, xs_features,
+        y_idt_features, d_output, reconstructed=False):
+        adv_loss = self.adv_criterion(d_output, t=-1, compute_d_loss=False)
+        attr_loss = self.attr_criterion(xt_features, y_attr_features)
+        rec_loss = self.rec_criterion(xt, y, reconstructed=reconstructed)
+        idt_loss = self.idt_criterion(xs_features, y_idt_features)
+        return adv_loss + attr_loss * self.attr_w + rec_loss*self.rec_w \
+            + idt_loss * self.idt_w
 
 
 class MultiScaleGanLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, opt):
         super().__init__()
 
 
     #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here. Also, the implementation may be
     #TODO: verify size of input y 
-    def forward(self, y, t, compute_d_loss=True):
+    def forward(self, y, t=1, compute_d_loss=True):
         """Reshape the input and compute loss for individual scales first, and
         then sum up the losses. 
         
@@ -60,22 +80,28 @@ class MultiScaleGanLoss(nn.Module):
 
 class AttrLoss(nn.Module):
 
-    """The loss is a multiple of the summation of L2 distances between 
-    corresponding multi-level feature maps of the target image and the synthesis
+    """The loss is a factor of the summation of L2 distances between 
+    corresponding multi-level feature maps of the target image and the synthesized
     image, obtained from the attribute decoder. 
     """
     
-    def __init__(self):
+    def __init__(self, opt):
         super().__init__()
 
 
-    def forward(self, x, y):
+    def forward(self, xfsq, yfsq):
         """
         Args:
-            x (TYPE): Description
-            y (TYPE): Description
+            xfsq (TYPE): sequence of multi-level attributes of the target image
+            yfsq (TYPE): sequence of multi-level attributes of the synthesized image
+        
+        Returns:
+            TYPE: Description
         """
-        return 0.5 * nn.functional.mse_loss(x, y, reduction="sum")
+        loss = 0
+        for xf, yf in zip(xfsq, yfsq):
+            loss += nn.functional.mse_loss(xf, yf, reduction="sum")
+        return 0.5 * loss
 
 
 class RecLoss(nn.Module):
@@ -84,19 +110,43 @@ class RecLoss(nn.Module):
     image and the synthesis image.
     """
 
-    def __init__(self):
+    def __init__(self, opt):
         super().__init__()
 
 
-    def forward(self, x, y):
-        return 0.5 * nn.functional.mse_loss(x, y, reduction="sum")        
+    def forward(self, x, y, reconstructed=False):
+        """Summary
+        
+        Args:
+            x (TYPE): target (or source) image
+            y (TYPE): sythesized image
+            reconstructed (bool, optional): whether same source and target image
+        
+        Returns:
+            TYPE: Description
+        """
+        loss = 0 if not reconstructed else \
+            0.5 * nn.functional.mse_loss(x, y, reduction="sum")
+        return loss     
 
 
 class IdtLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, opt):
         super().__init__()
 
 
-    #TODO: correct the dim parameter of cosine_similarity
-    def forward(self, x, y):
-        return 1 - nn.functional.cosine_similarity(x, y)
+    #TODO: verify the assumption about the size of inputs, and if the dim parameter of cosine_similarity is correct
+    #TODO: size of the output of the loss is not matched with that of other loss;
+    def forward(self, xf, yf):
+        """Summary
+        
+        Args:
+            xf (TYPE): feature map of the last layer before fc layer in
+            the identity encoder, of the source image. The shape is supposed to 
+            be (B,C,W,H)
+            yf (TYPE): the feature map of the synthesized image.
+        
+        Returns:
+            TYPE: A tensor of size (B, C, W)
+        """
+        return 1 - nn.functional.cosine_similarity(xf, yf, dim=2)
