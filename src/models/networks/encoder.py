@@ -12,34 +12,34 @@ class AttrEncoder(nn.Module):
         super().__init__()
         self.eopt = opt["encoder_opt"]
         self.dopt = opt["decoder_opt"]
-        self.ebn = eopt["num_blks"]
-        self.dbn = dopt["num_blks"]
+        self.ebn = self.eopt["num_blks"]
+        self.dbn = self.dopt["num_blks"]
 
         self.decoder_features = []
         self.encoder_features = []
         self.encoder = []
         self.decoder = []
-        for n in range(ebn):
+        for n in range(self.ebn):
             s = nn.sequential(
                 nn.Conv2d(
-                    eopt["conv"]["in_channels"][n],
-                    eopt["conv"]["out_channels"][n],
-                    eopt["conv"]["kernel_size"][n]                    
+                    self.eopt["conv"]["in_channels"][n],
+                    self.eopt["conv"]["out_channels"][n],
+                    self.eopt["conv"]["kernel_size"][n]                    
                     ),
-                nn.BatchNorm2d(eopt["conv"]["out_channels"][n]),
+                nn.BatchNorm2d(self.eopt["conv"]["out_channels"][n]),
                 nn.LeakyReLU()
                 )
             s.register_forward_hook(encoder_forward_hook) #TODO: verify if the hook works
             self.encoder.append(x)
 
-        for n in range(dbn):
+        for n in range(self.dbn):
             self.decoder.append(nn.sequential(
                 nn.ConvTranspose2d(
-                    dopt["conv"]["in_channels"][n],
-                    dopt["conv"]["out_channels"][n],
-                    dopt["conv"]["kernel_size"][n]                    
+                    self.dopt["conv"]["in_channels"][n],
+                    self.dopt["conv"]["out_channels"][n],
+                    self.dopt["conv"]["kernel_size"][n]                    
                     ),
-                nn.BatchNorm2d(dopt["conv"]["out_channels"][n]),
+                nn.BatchNorm2d(self.dopt["conv"]["out_channels"][n]),
                 nn.LeakyReLU()   
                 ))
 
