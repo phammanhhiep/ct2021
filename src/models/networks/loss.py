@@ -136,7 +136,7 @@ class IdtLoss(nn.Module):
 
 
     #TODO: verify the assumption about the size of inputs, and if the dim parameter of cosine_similarity is correct
-    #TODO: size of the output of the loss is not matched with that of other loss;
+    #TODO: verify summing up across spatial dimensions is appropriate to represent the loss
     def forward(self, xf, yf):
         """Summary
         
@@ -147,6 +147,8 @@ class IdtLoss(nn.Module):
             yf (TYPE): the feature map of the synthesized image.
         
         Returns:
-            TYPE: A tensor of size (B, C, W)
+            TYPE: A tensor of size (B, 1)
         """
-        return 1 - nn.functional.cosine_similarity(xf, yf, dim=2)
+        return torch.sum(
+            1 - nn.functional.cosine_similarity(xf, yf, dim=1), 
+            dim=(1,2))
