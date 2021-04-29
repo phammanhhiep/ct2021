@@ -4,6 +4,7 @@ from torch import nn
 
 from networks.generator import AEINet
 from networks.discriminator import MultiScaleDiscriminator
+from common import utils
 
 
 class FaceShifterModel(nn.Module):
@@ -16,7 +17,7 @@ class FaceShifterModel(nn.Module):
     def forward(self, x, mode=1):
         """Summary
         
-        Args:
+        Args: 
             x (TYPE): Description
             mode (int): 1=generator, 2=discriminator 
         """
@@ -31,13 +32,13 @@ class FaceShifterModel(nn.Module):
 
 
     def create_g(self):
-        self.g = AEINet(self.opt["aei_generator"])
-        #TODO: load pretrained model if not training
-
+        self.g = AEINet(self.opt["aei_net"])
+        self.g_checkpoint_name = "{}_g" # e.g. epoch_g 
+    
 
     def create_d(self):
         self.d = MultiScaleDiscriminator(self.opt["multi_scale_discriminator"])
-        #TODO: load pretrained model if not training
+        self.d_checkpoint_name = "{}_d" # e.g. epoch_g 
 
 
     def get_g_params(self):
@@ -48,10 +49,11 @@ class FaceShifterModel(nn.Module):
         return list(self.d.parameters())
 
 
-    def save(self): 
+    def save(self, epoch, save_dir): 
         """Save the model
         """
-
+        utils.save_net(self.g, self.g_checkpoint_name, save_dir)
+        utils.save_net(self.d, self.d_checkpoint_name, save_dir)
 
 
 
