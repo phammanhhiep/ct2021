@@ -42,10 +42,11 @@ def test(opt):
     idt_measure = 0
     hp_measure = 0
     fe_measure = 0
-    for j, batch_real_imgs in enumerate(dataloader):
-        generated_imgs = generator(batch_real_imgs, generated_imgs)
-        idt_measure += idt_retrieval(batch_real_imgs, generated_imgs)
-        hp_measure += head_pose_error(batch_real_imgs, generated_imgs, 
+    for j, batch_data in enumerate(dataloader):
+        generated_imgs = generator(batch_data)
+        source_images = batch_data[:, opt["source_img_idx"]]
+        idt_measure += idt_retrieval(source_images, generated_imgs)
+        hp_measure += head_pose_error(source_images, generated_imgs, 
             hp_estimator)
 
     logger.info((idt_measure, hp_measure, fe_measure))
@@ -55,18 +56,17 @@ def idt_retrieval(x, y, idt_encoder, dataset):
     """Summary
     
     Args:
-        x (TYPE): real face
-        y (TYPE): synthesized face
+        x (TYPE): real image
+        y (TYPE): synthesized image
         idt_encoder (TYPE): Description
-        dataset (TYPE): set of real faces from which we look for the 
-        corresponding real face for the synthesized face
+        dataset (TYPE): set of real image, excluding x
     """
     true_dist = torch.sum(nn.functional.cosine_similarity(
         idt_encoder(x), idt_encoder(y), dim=0))
     min_dist = true_dist
     for z in dataset:
         dist = torch.sum(nn.functional.cosine_similarity(
-        idt_encoder(x), idt_encoder(y), dim=0))
+        idt_encoder(z), idt_encoder(y), dim=0))
         dist = min(dist, min_dist)
     return torch.sum(true_dist <= min_dist)
 
