@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 
-from models.faceShifter_model import FaceShifter
+from models.faceShifter_model import FaceShifterModel
 from networks.loss import AEINetLoss, GanLoss
 
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class FaceShifterTrainer:
     def __init__(self, opt): 
         self.opt = opt
-        self.model = FaceShifter(opt)
+        self.model = FaceShifterModel(opt)
         self.create_criterion()
         self.create_optimizer()
 
@@ -68,3 +68,16 @@ class FaceShifterTrainer:
         Args:
             epoch (TYPE): Description
         """
+
+    def save_checkpoint(self, model_id, save_dir):
+        """Summary
+        
+        Args:
+            model_id (TYPE): Description
+            save_dir (TYPE): Description
+        """
+        self.model.save(model_id, save_dir)
+
+
+    def load_checkpoint(self, model_id, load_dir)
+        self.model.load(model_id, load_dir)
