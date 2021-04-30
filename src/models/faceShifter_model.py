@@ -33,12 +33,12 @@ class FaceShifterModel(nn.Module):
 
     def create_g(self):
         self.g = AEINet(self.opt["aei_net"])
-        self.g_checkpoint_name = "{}_g" # e.g. epoch_g 
+        self.g_checkpoint_name = "{}_g" # modelid_g
     
 
     def create_d(self):
         self.d = MultiScaleDiscriminator(self.opt["multi_scale_discriminator"])
-        self.d_checkpoint_name = "{}_d" # e.g. epoch_g 
+        self.d_checkpoint_name = "{}_d" # e.g. modelid_g
 
 
     def get_g_params(self):
@@ -49,15 +49,31 @@ class FaceShifterModel(nn.Module):
         return list(self.d.parameters())
 
 
-    def save(self, epoch, save_dir): 
+    def get_idt_encoder(self):
+        return self.g.get_idt_encoder()
+
+
+    def save(self, model_id, save_dir): 
         """Save the model
+        
+        Args:
+            model_id (TYPE): Description
+            save_dir (TYPE): Description
         """
-        utils.save_net(self.g, self.g_checkpoint_name, save_dir)
-        utils.save_net(self.d, self.d_checkpoint_name, save_dir)
+        utils.save_net(self.g, self.g_checkpoint_name.format(model_id),
+            save_dir)
+        utils.save_net(self.d, self.d_checkpoint_name.format(model_id),
+            save_dir)
 
 
-
-
-
-
-
+    def load(self, model_id, load_dir):
+        """Summary
+        
+        Args:
+            model_id (TYPE): Description
+            load_dir (TYPE): Description
+        """
+        utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
+            save_dir)
+        utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
+            save_dir)
