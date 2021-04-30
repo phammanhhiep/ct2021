@@ -74,6 +74,6 @@ class FaceShifterModel(nn.Module):
             load_dir (TYPE): Description
         """
         utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
-            save_dir)
+            load_dir)
         utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
-            save_dir)
+            load_dir)
