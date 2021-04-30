@@ -24,4 +24,3 @@ def load_net(net, label, load_dir):
     name = "{}.pth".format(epoch, label)
     load_path = os.path.join(load_dir, name)
     net.load_state_dict(torch.load(load_path), map_location=torch.device("cpu"))
-    return net
