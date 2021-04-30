@@ -4,27 +4,38 @@ import math
 import torch
 from torch import nn
 import torchvision
+import torch.nn.functional as F
 
 
-class Hopenet(nn.Module):
-    #TODO: make sense what is block.expansion and why it determine the input features
+from src.common import utils 
+
+
+class HopeNet(nn.Module):
+    #TODO: make sense what is block.expansion and why it determines the input features
     def __init__(self):
         """The net is similar to the implementation of ResNet50 from Pytorch. 
         The differences from that of Pytorch include,
         + There are 3 FC layer at the end
         + The last avgpool is AvgPool2d, instead of AdaptiveAvgPool2d   
         
+        The net returns how likely the angles fall in the num_bin bins (though
+        they are not probabilities). See "[2017] Fine-Grained Head Pose 
+        Estimation Without Keypoints (Ruiz et al)" for details about the
+        architecture.
+
         Args:
             block (TYPE, optional): Description
             layers (list, optional): Description
-            num_bins (int, optional): Description
+            num_bins (int, optional): number of bins for an angle
         """
         super().__init__()
         block = torchvision.models.resnet.Bottleneck
         layers = [3, 4, 6, 3]
-        num_bins = 66
+        self.num_bins = 66
+        self.idx_tensor = torch.tensor(range(self.num_bins))
 
         self.model = torchvision.models.resnet50()
+        del self.model.fc
         self.model.avgpool = nn.AvgPool2d(7)
         self.model.fc_yaw = nn.Linear(512 * block.expansion, num_bins)
         self.model.fc_pitch = nn.Linear(512 * block.expansion, num_bins)
@@ -49,3 +60,21 @@ class Hopenet(nn.Module):
         pre_roll = self.model.fc_roll(x)
 
         return pre_yaw, pre_pitch, pre_roll
+
+
+    def to_degree(self, x):
+        """The formula follow the training procedure of the related research. 
+        
+        Args:
+            x (TYPE): output of the network [pre_yaw, pre_pitch, pre_roll]
+        """
+        d = []
+        for xi in x:
+            p = F.softmax(xi)
+            di = torch.sum(p.data[0] * self.idx_tensor) * 3 - 99
+            d.append(di)
+        return torch.FloatTensor(d)
+
+
+    def load(self, label, save_dir):
+        utils.load_net(self.model, label, save_dir)
