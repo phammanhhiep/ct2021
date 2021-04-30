@@ -42,14 +42,28 @@ def test(opt):
     idt_measure = 0
     hp_measure = 0
     fe_measure = 0
+    count = 0
+
+    result = []
+
     for j, batch_data in enumerate(dataloader):
         generated_imgs = generator(batch_data)
         source_images = batch_data[:, opt["source_img_idx"]]
+        target_images = batch_data[:, opt["target_img_idx"]]
         idt_measure += idt_retrieval(source_images, generated_imgs)
-        hp_measure += head_pose_error(source_images, generated_imgs, 
+        hp_measure += head_pose_error(target_images, generated_imgs, 
             hp_estimator)
+        fe_measure += facial_expression_error(target_images, generated_imgs)
+        count += batch_data.size()[0]
+        result.append(generated_imgs)
 
-    logger.info((idt_measure, hp_measure, fe_measure))
+    logger.debug("Compute average value of the three evaluation quantities")
+    idt_measure = idt_measure / count
+    hp_measure = hp_measure / count
+    fe_measure = fe_measure / count
+
+    save_generated_images(result)
+    save_evaluation_results((idt_measure, hp_measure, fe_measure))
 
 
 def idt_retrieval(x, y, idt_encoder, dataset):
@@ -100,3 +114,9 @@ def facial_expression_error(x, y, estimator):
         estimator (TYPE): facial expression estimator, assumed to be a net
     """
     return 0
+
+
+def save_generated_images(): pass
+
+
+def save_evaluation_results(): pass
