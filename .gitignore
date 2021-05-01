@@ -131,3 +131,9 @@ dmypy.json
 
 # Raw data, transformed data
 datasets/
+
+# log
+log/
+
+# Model training
+checkpoint/
