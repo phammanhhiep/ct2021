@@ -1,0 +1,85 @@
+data:
+  train: "FFHQ"
+  validation: "FFHQ"
+  num_worker: 1
+  batch_size: 50
+
+FFHG:
+  train: "data/ffhg/train_data_list"
+  validation: "data/ffhg/validation_data_list"
+CelebAHQ:
+  train: "data/celebahq/train_data_list"
+  validation: "data/celebahq/validation_data_list"
+
+trainer:
+  name: "FaceShifterTrainer"
+  max_epochs: 1000
+  continue:
+    status: False
+    epoch: 0
+  d_step_per_g: 2 # number of training times of discriminator per that of generator
+  optim:
+    name: "Adam"
+    lr: 1e-3
+    beta: [0.1, 0.2]
+
+model:
+  name: "FaceShifterModel"
+  generator: "AEINet"
+  discriminator: "MultiScaleDiscriminator"
+
+AttrEncoder:
+  encoder:
+    num_blks: 6
+    conv:
+      in_channels: null
+      out_channels: null
+      kernel_size: null
+  decoder:
+    num_blks: 5
+    conv_tr:
+      in_channels: null
+      out_channels: null
+      kernel_size: null      
+  last_layer: null
+
+ArcFace:
+  num_classes: null
+  pretrained_model: "experiments/idt_encoder/Arcface.pth"
+  map_location: "cpu"    
+
+AADGenerator:
+  num_AADResBlk: 8
+  AADResBlk_out_channel_list: [1024, 1024, 1024, 512, 256, 128, 64, 3]
+  attr_channel_list: [] #TODO: provide attr_channel_list
+  idt_channels: 256 # the number of features of the idenity which is assumed to be 1D vector
+  conv_tr:
+    out_channels: 1024
+    kernel_size: 2
+  AADResBlk:
+    ADDNorm:
+      mask_conv:
+        kernel_size: 3
+      beta_conv:
+        kernel_size: 3          
+      gamma_conv:
+        kernel_size: 3 
+    conv:
+      kernel_size: 3
+    input_transform:
+      ADDNorm: null
+      conv:
+        out_channels: null
+        kernel_size: null
+  last_layer:
+    in_channels: null
+    out_channels: null
+    kernel_size: null
+
+MultiScaleDiscriminator: nulls
+
+checkpoint:
+  save_dir: "checkpoint"
+
+log:
+  save_dir: "log"
