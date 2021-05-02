@@ -2,45 +2,48 @@ import torch
 from torch import nn
 
 
-class AADeNorm(nn.Module):
+class AADNorm(nn.Module):
     def __init__(self, opt):
         super().__init()
-        bn = nn.BatchNorm2d(opt["last_activation_size"])
-        gamma_conv = nn.Conv2d(
-            opt["last_target_attr_num_channels"],
-            opt["AADeNorm"]["gamma_out_channels"],
-            opt["AADeNorm"]["gamma_kernel_size"],
-            )
-        beta_conv = nn.Conv2d(
-            opt["last_attr_num_channels"],
-            opt["AADeNorm"]["gamma_out_channels"],
-            opt["AADeNorm"]["gamma_kernel_size"],
-            )
-        gamma_fc = nn.Linear(
-            opt["identity_num_features"],
-            opt["AADeNorm"]["fc_num_activations"]
-            )
-        beta_fc = nn.Linear(
-            opt["identity_num_features"],
-            opt["AADeNorm"]["fc_num_activations"]
+        self.bn = nn.BatchNorm2d(opt["in_size"][1])
+        self.mask_conv = nn.Conv2d(
+            opt["in_size"][1],
+            opt["in_size"][1],
+            opt["mask_conv"]["kernel_size"],            
             )        
-        mask_conv = nn.Conv2d(
-            opt["last_activation_size"][1],
-            opt["AADeNorm"]["mask_out_channels"],
-            opt["AADeNorm"]["mask_kernel_size"],            
+        self.sigmoid = nn.Sigmoid()
+
+        self.gamma_conv = nn.Conv2d(
+            opt["attr_size"][1],
+            opt["in_size"][1],
+            opt["gamma_conv"]["kernel_size"],
+            )
+        self.beta_conv = nn.Conv2d(
+            opt["attr_size"][1],
+            opt["in_size"][1],
+            opt["beta_conv"]["kernel_size"],
+            )
+
+        self.gamma_fc = nn.Linear(
+            opt["idt_size"],
+            opt["in_size"]
+            )
+        self.beta_fc = nn.Linear(
+            opt["idt_size"],
+            opt["in_size"]
             )
 
     def forward(self, x):
-        in_h, idt, attr = x
-        h_hat = bn(h)
-        mask = nn.functional.sigmoid(mask_conv(h_hat))
+        h, idt, attr = x
+        h_hat = self.bn(h)
+        mask = self.sigmoid(self.mask_conv(h_hat))
 
-        attr_beta = beta_conv(attr)
-        attr_gamma = gamma_conv(attr)
+        attr_beta = self.beta_conv(attr)
+        attr_gamma = self.gamma_conv(attr)
         denorm_attr =  h_hat * attr_gamma + attr_beta
 
-        idt_beta = beta_fc(idt)
-        idt_gamma = gamma_fc(idt)
-        denorm_idt = idt_gamma * idt + idt_beta
+        idt_beta = self.beta_fc(idt)
+        idt_gamma = self.gamma_fc(idt)
+        denorm_idt = h_hat * idt_gamma + idt_beta
         
         return (1-mask) * denorm_attr + mask * denorm_idt
