@@ -5,15 +5,23 @@ from models.networks.normalization import AADNorm
 
 
 class AADResBlk(nn.Module):
-    def __init__(self, in_size, attr_size, idt_size, out_channels, opt):
+    def __init__(self, in_channels, attr_channels, idt_channels, out_channels, 
+        opt):
+        """Summary
+        
+        Args:
+            in_channels (TYPE): Description
+            attr_channels (TYPE): Description
+            idt_channels (TYPE): Description
+            out_channels (TYPE): Description
+            opt (TYPE): Description
+        """
         super().__init__()
-        self.opt = opt
-        in_channels = in_size[1]
         self.model = []
-        self.diff_in_out_channels = out_channel != in_channels
+        self.diff_in_out_channels = out_channels != in_channels
 
         self.model.append(nn.sequential([
-            AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
+            AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
             nn.Conv2d(
                 in_channels,
@@ -22,7 +30,7 @@ class AADResBlk(nn.Module):
                 )
             ]))
         self.model.append(nn.sequential([
-            AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
+            AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
             nn.Conv2d(
                 in_channels,
@@ -33,11 +41,11 @@ class AADResBlk(nn.Module):
 
         if self.diff_in_out_channels:
             self.input_transform = nn.sequential(
-                AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
+                AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
                 nn.ReLU(),
                 nn.Conv2d(
                     in_channels,
-                    out_channel,
+                    out_channels,
                     opt["conv"]["kernel_size"]
                     )                
                 )
