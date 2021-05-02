@@ -3,7 +3,7 @@ from torch import nn
 
 
 from models.networks.block import AADResBlk
-from models.networks.encoder import AttrEncoder, ArcFace
+from models.networks.encoder import AttrEncoder, IdtEncoder
 
 
 class AEINet(nn.Module):
@@ -12,9 +12,9 @@ class AEINet(nn.Module):
     """
     def __init__(self, opt):
         super().__init__()
-        self.attr_encoder = AttrEncoder(opt["attr_encoder"])
-        self.idt_encoder = ArcFace(opt["idt_encoder"])
-        self.generator = AADGenerator(opt["generator"])
+        self.attr_encoder = AttrEncoder(opt["AttrEncoder"])
+        self.idt_encoder = IdtEncoder(opt["ArcFace"])
+        self.generator = AADGenerator(opt["AADGenerator"])
 
 
     def forward(self, xs, xt):
@@ -28,8 +28,12 @@ class AEINet(nn.Module):
         """
         idt = self.idt_encoder(xs)
         _ = self.attr_encoder(xt)
-        attr = self.attr_encoder.get_decoder_feature_maps()
-        return self.generator(idt, idt, attr)
+        multi_level_attrs = self.attr_encoder.get_decoder_feature_maps()
+        return self.generator(idt, idt, multi_level_attrs)
+
+
+    def get_idt_encoder(self):
+        return self.idt_encoder
 
 
 class AADGenerator(nn.Module):
@@ -37,28 +41,45 @@ class AADGenerator(nn.Module):
     """The implementaion is based on the ADD generator discussed in "FaceShifter:
     Towards High Fidelity And Occlusion Aware Face Swapping (Li et al)".
     """
-
-    #TODO: provide arguments to the methods
-    #TODO: provide options to specify the number of ADDResBlks 
-    def __init__(self, opt):
+    def __init__(self, attr_channel_list, opt):
+        """Summary
+        
+        Args:
+            attr_channel_list (TYPE): Description
+            opt (TYPE): Description
+        """
         super().__init__()
-        self.opt = opt
         self.model = []
-        num_aadResBlk = opt["num_aadResBlk"]
+        num_AADResBlk = opt["num_AADResBlk"]
+        AADResBlk_out_channels = opt["AADResBlk_out_channels"]
+        idt_channels = opt["idt_channels"]
 
-        for n in range(num_aadResBlk):
-            self.model.append(AADResBlk(opt["aadResBlk"][n]))
+        self.model.append(nn.ConvTranspose2d(
+            idt_channels,
+            opt["conv_tr"]["out_channels"]
+            opt["conv_tr"]["kernel_size"]
+            ))
 
-        self.last_layer = nn.Conv2d(
-            opt["last_layer"]["in_channels"],
-            opt["last_layer"]["out_channels"],
-            opt["last_layer"]["kernel_size"]
-            )
+        in_size = opt["conv_tr"]["out_channels"]
+        for n in range(num_AADResBlk):
+            attr_channels = attr_channel_list[n]
+            out_channels = AADResBlk_out_channels[n]
+            self.model.append(AADResBlk(
+                in_size, attr_channels, idt_channels, out_channels, opt["AADResBlk"]))
+            in_size = out_channels
 
 
     def forward(self, x):
         h, idt, attr_sq = x
         for blk, attr in zip(self.model, attr_sq):
             h = blk((h, idt, attr))
-        return self.last_layer(h)
+        return h
 
+
+#TODO: implement HEARNet
+class HEARNet(nn.Module):
+    def __init__(self, opt):
+        super().__init__()
+
+
+    def forward(self, x): pass
