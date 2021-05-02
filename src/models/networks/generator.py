@@ -41,7 +41,7 @@ class AADGenerator(nn.Module):
     """The implementaion is based on the ADD generator discussed in "FaceShifter:
     Towards High Fidelity And Occlusion Aware Face Swapping (Li et al)".
     """
-    def __init__(self, attr_channel_list, opt):
+    def __init__(self, opt):
         """Summary
         
         Args:
@@ -50,8 +50,9 @@ class AADGenerator(nn.Module):
         """
         super().__init__()
         self.model = []
+        attr_channel_list = opt["attr_channel_list"]
         num_AADResBlk = opt["num_AADResBlk"]
-        AADResBlk_out_channels = opt["AADResBlk_out_channels"]
+        AADResBlk_out_channel_list = opt["AADResBlk_out_channel_list"]
         idt_channels = opt["idt_channels"]
 
         self.model.append(nn.ConvTranspose2d(
@@ -63,7 +64,7 @@ class AADGenerator(nn.Module):
         in_size = opt["conv_tr"]["out_channels"]
         for n in range(num_AADResBlk):
             attr_channels = attr_channel_list[n]
-            out_channels = AADResBlk_out_channels[n]
+            out_channels = AADResBlk_out_channel_list[n]
             self.model.append(AADResBlk(
                 in_size, attr_channels, idt_channels, out_channels, opt["AADResBlk"]))
             in_size = out_channels
