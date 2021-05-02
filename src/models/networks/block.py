@@ -1,35 +1,44 @@
 import torch
 from torch import nn
 
-from models.networks.normalization import AADeNorm
+from models.networks.normalization import AADNorm
 
 
 class AADResBlk(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, in_size, attr_size, idt_size, out_channels, opt):
         super().__init__()
         self.opt = opt
-        num_aads = opt["num_aads"]
+        in_channels = in_size[1]
         self.model = []
+        self.diff_in_out_channels = out_channel != in_channels
 
-        for n in range(num_aads):
-            self.model.append(nn.sequential(
-                AADeNorm(opt["AADeNorm"][n]),
+        self.model.append(nn.sequential([
+            AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
+            nn.ReLU(),
+            nn.Conv2d(
+                in_channels,
+                in_channels,
+                opt["conv"]["kernel_size"]
+                )
+            ]))
+        self.model.append(nn.sequential([
+            AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
+            nn.ReLU(),
+            nn.Conv2d(
+                in_channels,
+                out_channels,
+                opt["conv"]["kernel_size"]
+                )
+            ]))
+
+        if self.diff_in_out_channels:
+            self.input_transform = nn.sequential(
+                AADNorm(in_size, attr_size, idt_size, opt["AADNorm"]),
                 nn.ReLU(),
                 nn.Conv2d(
-                    opt["conv"]["in_channels"][n],
-                    opt["conv"]["out_channels"][n],
-                    opt["conv"]["kernel_size"][n]
-                    )
-                ))
-
-        if opt["mismatch_in_out_channels"]:
-            self.input_transform_sq = nn.sequential(
-                AADeNorm(opt["input_transform"]["AADeNorm"]),
-                nn.ReLU(),
-                nn.Conv2d(
-                    opt["input_transform"]["conv"]["in_channels"],
-                    opt["input_transform"]["conv"]["out_channels"],
-                    opt["input_transform"]["conv"]["kernel_size"]
+                    in_channels,
+                    out_channel,
+                    opt["conv"]["kernel_size"]
                     )                
                 )
 
@@ -49,6 +58,6 @@ class AADResBlk(nn.Module):
             h_out = sq(x)
             x = (h_out, idt, attr)
 
-        if self.opt["mismatch_in_out_channels"]: 
-            h = self.input_transform_sq((h, idt, attr))
+        if self.diff_in_out_channels: 
+            h = self.input_transform((h, idt, attr))
         return h + h_out
