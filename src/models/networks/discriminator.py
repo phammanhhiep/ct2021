@@ -2,69 +2,102 @@ from torch import nn
 
 
 class MultiScaleDiscriminator(nn.Module):
+
+    """The implementation of a multi-scale discriminator described in 
+    "[2018] High-Resolution Image Synthesis and Semantic Manipulation with 
+    Conditional GANs (Wang et al) (NVIDIA)"
+    """
+
     def __init__(self, opt):
         super().__init__()
-        self.opt = opt
         self.num_ds = opt["num_ds"]
-        self.ds_scale_factors = opt["downsample_scale_factors"]
-        self.ds = []
+        self.scale = opt["downsample_scale_factor"]
+        self.model = []
 
         for n in range(self.num_ds):
-            self.ds.append(PatchGANDiscriminator(opt["patch_gan_d"]))
+            self.model.append(
+                PatchGANDiscriminator(opt["PatchGANDiscriminator"]))
 
 
     def forward(self, x):
-        y = []
-        for n in range(self.num_ds):
-            x = nn.functional.interpolate(x, 
-                (1, 1, self.ds_scale_factors[n], self.ds_scale_factors[n]))
-            y.append(self.ds[n](x))
-        return y
+        """
+        
+        Args:
+            x (TYPE): Description
+        
+        Returns:
+            TYPE: Description
+        """
+        h = []
+        h.append(self.model[0](x))
+
+        for n in range(1, self.num_ds):
+            x = self.downsample(x)
+            h.append(self.model[n](x))
+
+        return h
+
+
+    #TODO: consider argument of nn.functional.interpolate
+    def downsample(self, x):
+        return nn.functional.interpolate(x, 
+            scale_factor=(1, 1, self.scale, self.scale))       
 
 
 class PatchGANDiscriminator(nn.Module):
 
     """Implementation of the Patch-GAN described in "[2017] Image-to-image 
-    translation with conditional adversarial networks"
+    translation with conditional adversarial networks". The output for a single
+    image is not a single scalar in [0, 1], but a tensor of size (1, H, W) with 
+    H*W is the number of patches of the image, whose elements in [0, 1].
     """
 
     #TODO: verify if spectral norm is used at the same time with instance norm, or instance norm is replaced by spectral norm
-    #TODO: include an option for spectral norms
     def __init__(self, opt):
         super().__init__()
-        conv_blk_opt = opt["conv_blk"]
-        in_channels = conv_blk_opt["conv"]["in_channels"]
-        out_channels = conv_blk_opt["conv"]["out_channels"]
-        kernel_size = conv_blk_opt["conv"]["out_channels"]
-        leaky_relu_slope = conv_blk_opt["leaky_relu"]["slope"]
+        num_conv_blks = opt["num_conv_blks"]
+        in_channels = opt["in_channel"]
+        out_channels_list = opt["conv"]["out_channel_list"]
+        conv_kernel_size = opt["conv"]["kernel_size"]
+        conv_stride = opt["conv"]["stride"]
+        conv_padding = opt["conv"]["padding"]
+        LeakyReLU_slope = opt["LeakyReLU_slope"]
         innorm_num_features = conv_blk_opt["innorm"]["num_features"]
-        num_blk = opt["num_blk"]
         self.model = []
 
-        for n in range(num_blk):
+        for n in range(num_conv_blks):
+            out_channels = out_channels_list[n]
             if n == 0:
-                self.model += [
+                self.model = [
                     nn.utils.spectral_norm(nn.Conv2d(
-                        in_channels[n], out_channels[n], kernel_size)),
-                    nn.LeakyReLU(leaky_relu_slope)
+                        in_channels, out_channels, conv_kernel_size, 
+                        conv_stride, conv_padding)),
+                    nn.LeakyReLU(LeakyReLU_slope)
                     ]
             else:
                 self.model += [
                     nn.utils.spectral_norm(nn.Conv2d(
-                        in_channels[n], out_channels[n], kernel_size)),
-                    nn.InstanceNorm2d(innorm_num_features[n]),
-                    nn.LeakyReLU(leaky_relu_slope)
+                        in_channels, out_channels, kernel_size)),
+                    nn.InstanceNorm2d(out_channels),
+                    nn.LeakyReLU(LeakyReLU_slope)
                     ]
+            in_channels = out_channels
+
         self.model += [
             nn.utils.spectral_norm(nn.Conv2d(
-                opt["last_layer"]["in_channels"],
-                opt["last_layer"]["out_channels"]
-                opt["last_layer"]["kernel_size"]            
-                )),
+                out_channels, 1, conv_kernel_size, conv_stride, conv_padding)),
             nn.Sigmoid()
             ]
         self.model = nn.sequential(self.model)
 
 
     def forward(self, x):
+        """Summary
+        
+        Args:
+            x (TYPE): batch of input of size (B, C, H, W)
+        
+        Returns:
+            TYPE: size (B, 1, H_p, W_p) with H_p * W_p is the number of patches 
+        """
         return self.model(x)
