@@ -10,8 +10,8 @@ from common import utils
 class FaceShifterModel(nn.Module):
     def __init__(self, opt):
         super().__init__()
-        self.create_g()
-        self.create_d()
+        self.create_g(opt["AEINet"])
+        self.create_d(opt["MultiScaleDiscriminator"])
 
 
     def forward(self, x, mode=1):
@@ -31,13 +31,13 @@ class FaceShifterModel(nn.Module):
         return h
 
 
-    def create_g(self):
-        self.g = AEINet(self.opt["aei_net"])
+    def create_g(self, opt):
+        self.g = AEINet(opt)
         self.g_checkpoint_name = "{}_g" # modelid_g
     
 
-    def create_d(self):
-        self.d = MultiScaleDiscriminator(self.opt["multi_scale_discriminator"])
+    def create_d(self, opt):
+        self.d = MultiScaleDiscriminator(opt)
         self.d_checkpoint_name = "{}_d" # e.g. modelid_g
 
 
@@ -49,8 +49,16 @@ class FaceShifterModel(nn.Module):
         return list(self.d.parameters())
 
 
-    def get_idt_encoder(self):
-        return self.g.get_idt_encoder()
+    #TODO: review the output
+    def get_face_identity(self, x):
+        idt_encoder = self.g.get_idt_encoder()
+        return idt_encoder(x)
+
+
+    def get_face_attribute(self, x):
+        attr_encoder = self.g.get_attr_encoder()
+        attr_encoder(x)
+        return attr_encoder.get_decoder_feature_maps()
 
 
     def save(self, model_id, save_dir): 
