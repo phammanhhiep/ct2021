@@ -1,3 +1,6 @@
+import logging
+
+
 import torch
 from torch import nn
 import torchvision
@@ -8,7 +11,7 @@ class AttrEncoder(nn.Module):
     """A U-net-like network to extract attributes from the target image.
     """
 
-    def __init__(self, opt, in_channels=3):
+    def __init__(self, opt):
         """Summary
         
         Args:
@@ -17,15 +20,17 @@ class AttrEncoder(nn.Module):
             and thus the in_channel is assumed to be 3
         """
         super().__init__()
-        self.eopt = opt["encoder"]
-        self.dopt = opt["decoder"]
+        in_channels = opt["in_channels"]
+        eopt = opt["encoder"]
+        dopt = opt["decoder"]
         self.ebn = self.eopt["num_blks"]
         self.dbn = self.dopt["num_blks"]
-
         self.decoder_features = []
         self.encoder_features = []
         self.encoder = []
         self.decoder = []
+
+
         for n in range(self.ebn):
             out_channels = self.eopt["conv"]["out_channels"][n]
             sq = nn.sequential(
