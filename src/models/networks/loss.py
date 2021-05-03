@@ -10,26 +10,45 @@ logger = logging.getLogger(__name__)
 
 class AEINetLoss(nn.Module):
 
-    """The loss function of the generator
+    """The loss function of the generator AEINet
     """
 
     def __init__(self, opt):
         super().__init__()
-        self.adv_criterion = MultiScaleGanLoss(opt["adv_loss"])
-        self.attr_criterion = AttrLoss(opt["attr_loss"])
-        self.rec_criterion = RecLoss(opt["rec_loss"])
-        self.idt_criterion = IdtLoss(opt["idt_loss"])
-        self.attr_w, self.rec_w, self.idt_w = opt["loss_weights"]
+        self.adv_criterion = MultiScaleGanLoss(opt["GANLoss"])
+        self.attr_criterion = AttrLoss(opt["AttrLoss"])
+        self.rec_criterion = RecLoss(opt["RecLoss"])
+        self.idt_criterion = IdtLoss(opt["IdtLoss"])
+        self.AttrLoss_w = opt["loss_weights"]["AttrLoss"]
+        self.RecLoss_w = opt["loss_weights"]["RecLoss"]
+        self.IdtLoss_w = opt["loss_weights"]["IdtLoss"]
 
 
-    def forward(self, xt, y, xt_features, y_attr_features, xs_features,
-        y_idt_features, d_output, reconstructed=False):
+    def forward(self, xt, y, xt_attr, y_attr, xs_idt,
+        y_idt, d_output, reconstructed=False):
+        """Summary
+        
+        Args:
+            xt (TYPE): a batch of target images
+            y (TYPE): a batch of generated images
+            xt_attr (TYPE): a batch of multi-level attributes of the target images
+            y_attr (TYPE): a batch of multi-level attributes of the generated 
+            images
+            xs_idt (TYPE): a batch of identities of the source images
+            y_idt (TYPE): a batch of identities of the generated images
+            d_output (TYPE): a batch of outputs of the discriminator
+            reconstructed (bool, optional): whether source and target images are
+            the same
+        
+        Returns:
+            TYPE: Description
+        """
         adv_loss = self.adv_criterion(d_output, t=-1, compute_d_loss=False)
-        attr_loss = self.attr_criterion(xt_features, y_attr_features)
+        attr_loss = self.attr_criterion(xt_attr, y_attr)
         rec_loss = self.rec_criterion(xt, y, reconstructed=reconstructed)
-        idt_loss = self.idt_criterion(xs_features, y_idt_features)
-        return adv_loss + attr_loss * self.attr_w + rec_loss*self.rec_w \
-            + idt_loss * self.idt_w
+        idt_loss = self.idt_criterion(xs_idt, y_idt)
+        return adv_loss + attr_loss*self.AttrLoss_w + rec_loss*self.RecLoss_w \
+            + idt_loss*self.IdtLoss_w
 
 
 class MultiScaleGanLoss(nn.Module):
@@ -38,7 +57,6 @@ class MultiScaleGanLoss(nn.Module):
 
 
     #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here.
-    #TODO: verify size of input y 
     def forward(self, y, t=1, compute_d_loss=True):
         """Reshape the input and compute loss for individual scales first, and
         then sum up the losses. 
@@ -94,7 +112,8 @@ class AttrLoss(nn.Module):
         """
         Args:
             xfsq (TYPE): sequence of multi-level attributes of the target image
-            yfsq (TYPE): sequence of multi-level attributes of the synthesized image
+            yfsq (TYPE): sequence of multi-level attributes of the synthesized 
+            image
         
         Returns:
             TYPE: Description
@@ -126,9 +145,8 @@ class RecLoss(nn.Module):
         Returns:
             TYPE: Description
         """
-        loss = 0 if not reconstructed else \
-            0.5 * nn.functional.mse_loss(x, y, reduction="sum")
-        return loss     
+        return 0 if not reconstructed else \
+            0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
 
 
 class IdtLoss(nn.Module):
