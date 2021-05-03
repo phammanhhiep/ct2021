@@ -37,7 +37,7 @@ class MultiScaleGanLoss(nn.Module):
         super().__init__()
 
 
-    #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here. Also, the implementation may be
+    #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here.
     #TODO: verify size of input y 
     def forward(self, y, t=1, compute_d_loss=True):
         """Reshape the input and compute loss for individual scales first, and
@@ -45,8 +45,8 @@ class MultiScaleGanLoss(nn.Module):
         
         Args:
             y (TYPE): a batch of multi-scale discriminator outputs, each of
-            which is a list of 3D tensors; size of y is expected to be
-            (batch_size, multi_scale_size, discriminator_output) 
+            which is a list of 5D tensors; size of y is expected to be
+            (batch_size, num_d, 1, H, W)
             t (TYPE): 1 for real image; -1 for fake image
             compute_d_loss (bool, optional): compute d loss or g loss
         
@@ -64,7 +64,8 @@ class MultiScaleGanLoss(nn.Module):
         """Summation of individual hinge losses.
         
         Args:
-            y (TYPE): a batch of outputs
+            y (TYPE): a batch of outputs from a discriminator of size 
+            (B, 1, H, W)
             t (bool, optional): 1=real, -1=fake 
             compute_d_loss (bool, optional): compute loss for d or g.
         """
