@@ -23,6 +23,18 @@ class AttrEncoder(nn.Module):
         in_channels = opt["in_channels"]
         eopt = opt["encoder"]
         dopt = opt["decoder"]
+        leakyReLU_slope = opt["leakyReLU_slope"]
+
+        encoder_out_channel_list = self.eopt["conv"]["out_channel_list"] 
+        conv_kernel_size = self.eopt["conv"]["kernel_size"]
+        conv_stride = self.eopt["conv"]["stride"]
+        conv_padding = self.eopt["conv"]["padding"]
+
+        decoder_out_channel_list = self.dopt["conv"]["out_channel_list"]
+        conv_tr_kernel_size = self.dopt["conv_tr"]["kernel_size"]
+        conv_tr_stride = self.dopt["conv_tr"]["stride"]
+        conv_tr_padding = self.dopt["conv_tr"]["padding"]
+
         self.ebn = self.eopt["num_blks"]
         self.dbn = self.dopt["num_blks"]
         self.decoder_features = []
@@ -32,35 +44,30 @@ class AttrEncoder(nn.Module):
 
 
         for n in range(self.ebn):
-            out_channels = self.eopt["conv"]["out_channels"][n]
+            out_channels = encoder_out_channel_list[n]
             sq = nn.sequential(
                 nn.Conv2d(
-                    in_channels
-                    out_channels,
-                    self.eopt["conv"]["kernel_size"],
-                    self.eopt["conv"]["stride"],
-                    self.eopt["conv"]["padding"]                  
-                    ),
+                    in_channels, out_channels, conv_kernel_size, conv_stride, 
+                    conv_padding),
                 nn.BatchNorm2d(out_channels),
-                nn.LeakyReLU()
+                nn.LeakyReLU(leakyReLU_slope)
                 )
+            in_channels = out_channels
             sq.register_forward_hook(encoder_forward_hook)
             self.encoder.append(sq)
+
+
         self.encoder = nn.sequential(self.encoder)
 
         for n in range(self.dbn):
             in_channels = out_channels
-            out_channels = self.dopt["conv_tr"]["out_channels"][n]
+            out_channels = decoder_out_channel_list[n]
             self.decoder.append(nn.sequential(
                 nn.ConvTranspose2d(
-                    in_channels
-                    out_channels,
-                    self.dopt["conv_tr"]["kernel_size"],
-                    self.dopt["conv_tr"]["stride"],
-                    self.dopt["conv_tr"]["padding"]                     
-                    ),
+                    in_channels, out_channels, conv_tr_kernel_size, 
+                    conv_tr_stride, conv_tr_padding),
                 nn.BatchNorm2d(out_channels),
-                nn.LeakyReLU()   
+                nn.LeakyReLU(leakyReLU_slope)   
                 ))
 
     def pre_forward(self):
