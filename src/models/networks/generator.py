@@ -50,31 +50,51 @@ class AADGenerator(nn.Module):
         """
         super().__init__()
         self.model = []
+        self.upsample_scale = opt["upsample_scale"]
         attr_channel_list = opt["attr_channel_list"]
         num_AADResBlk = opt["num_AADResBlk"]
         AADResBlk_out_channel_list = opt["AADResBlk_out_channel_list"]
         idt_channels = opt["idt_channels"]
 
-        self.model.append(nn.ConvTranspose2d(
+        self.conv_tr = nn.ConvTranspose2d(
             idt_channels,
-            opt["conv_tr"]["out_channels"]
-            opt["conv_tr"]["kernel_size"]
-            ))
+            opt["conv_tr"]["out_channels"],
+            opt["conv_tr"]["kernel_size"],
+            opt["conv_tr"]["stride"],
+            opt["conv_tr"]["padding"]
+            )
 
         in_size = opt["conv_tr"]["out_channels"]
         for n in range(num_AADResBlk):
             attr_channels = attr_channel_list[n]
             out_channels = AADResBlk_out_channel_list[n]
             self.model.append(AADResBlk(
-                in_size, attr_channels, idt_channels, out_channels, opt["AADResBlk"]))
+                in_size, attr_channels, idt_channels, out_channels, 
+                opt["AADResBlk"]))
             in_size = out_channels
 
 
-    def forward(self, x):
-        h, idt, attr_sq = x
+    def forward(self, idt, attr_sq):
+        """Summary
+        
+        Args:
+            idt (TYPE): a batch of identity features of size (B, C, 1, 1)
+            attr_sq (TYPE): a batch of squences of attributes of size
+            (num_attr, B, C, H, W)
+        
+        Returns:
+            TYPE: Description
+        """
+        h = self.conv_tr(idt)
         for blk, attr in zip(self.model, attr_sq):
-            h = blk((h, idt, attr))
+            h = self.upsample(blk((h, idt, attr)))
         return h
+
+
+    def upsample(self, x):
+        return nn.functional.interpolate(x, 
+            scale_factor=(1,1,self.upsample_scale, self.upsample),
+            mode="bilinear", align_corners=True)
 
 
 #TODO: implement HEARNet
