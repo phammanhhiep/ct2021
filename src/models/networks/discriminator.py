@@ -62,7 +62,6 @@ class PatchGANDiscriminator(nn.Module):
         conv_stride = opt["conv"]["stride"]
         conv_padding = opt["conv"]["padding"]
         LeakyReLU_slope = opt["LeakyReLU_slope"]
-        innorm_num_features = conv_blk_opt["innorm"]["num_features"]
         self.model = []
 
         for n in range(num_conv_blks):
