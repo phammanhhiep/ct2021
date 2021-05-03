@@ -5,13 +5,20 @@ import torchvision
 
 class AttrEncoder(nn.Module):
 
-    """A U-net-like network to extract attribute from the target image.
+    """A U-net-like network to extract attributes from the target image.
     """
 
-    def __init__(self, opt):
+    def __init__(self, opt, in_channels=3):
+        """Summary
+        
+        Args:
+            opt (TYPE): Description
+            in_channels (int, optional): Image is fed directly to the network, 
+            and thus the in_channel is assumed to be 3
+        """
         super().__init__()
-        self.eopt = opt["encoder_opt"]
-        self.dopt = opt["decoder_opt"]
+        self.eopt = opt["encoder"]
+        self.dopt = opt["decoder"]
         self.ebn = self.eopt["num_blks"]
         self.dbn = self.dopt["num_blks"]
 
@@ -20,39 +27,48 @@ class AttrEncoder(nn.Module):
         self.encoder = []
         self.decoder = []
         for n in range(self.ebn):
-            s = nn.sequential(
+            out_channels = self.eopt["conv"]["out_channels"][n]
+            sq = nn.sequential(
                 nn.Conv2d(
-                    self.eopt["conv"]["in_channels"][n],
-                    self.eopt["conv"]["out_channels"][n],
-                    self.eopt["conv"]["kernel_size"][n]                    
+                    in_channels
+                    out_channels,
+                    self.eopt["conv"]["kernel_size"],
+                    self.eopt["conv"]["stride"],
+                    self.eopt["conv"]["padding"]                  
                     ),
-                nn.BatchNorm2d(self.eopt["conv"]["out_channels"][n]),
+                nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU()
                 )
-            s.register_forward_hook(encoder_forward_hook) #TODO: verify if the hook works
-            self.encoder.append(x)
+            sq.register_forward_hook(encoder_forward_hook)
+            self.encoder.append(sq)
+        self.encoder = nn.sequential(self.encoder)
 
         for n in range(self.dbn):
+            in_channels = out_channels
+            out_channels = self.dopt["conv_tr"]["out_channels"][n]
             self.decoder.append(nn.sequential(
                 nn.ConvTranspose2d(
-                    self.dopt["conv"]["in_channels"][n],
-                    self.dopt["conv"]["out_channels"][n],
-                    self.dopt["conv"]["kernel_size"][n]                    
+                    in_channels
+                    out_channels,
+                    self.dopt["conv_tr"]["kernel_size"],
+                    self.dopt["conv_tr"]["stride"],
+                    self.dopt["conv_tr"]["padding"]                     
                     ),
-                nn.BatchNorm2d(self.dopt["conv"]["out_channels"][n]),
+                nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU()   
                 ))
 
-        self.last_layer = nn.Upsample(**opt["last_layer"]) #TODO: review the arguments
+    def pre_forward(self):
+        self.decoder_features = []
 
 
-    def encoder_forward_hook(self, x):
+    def encoder_forward_hook(self, x, y):
         """Append the encoder layer output to a list.
         
         Args:
             x (TYPE): output of an encoder layer
         """
-        self.encoder_features.append(x)
+        self.encoder_features.append(y)
 
 
     def decoder_post_forward(self, x1, n=None):
@@ -75,31 +91,33 @@ class AttrEncoder(nn.Module):
         return x
 
 
-    #TODO: make sure input and out channel in decoder part are correct
     def forward(self, x):
-        for n in range(self.ebn):
-            x = self.encoder[n](x)
+        self.pre_forward()
+        x = self.encoder[n](x)
 
         for n in range(self.dbn):
             x = self.decoder[n](x)
             x = self.decoder_post_forward(x, n)
-        y = self.last_layer(x)
-        self.decoder_post_forward(y)
-        return y
+
+        x = nn.functional.interpolate(x, size=2, mode='bilinear', 
+            align_corners=True)
+        return self.decoder_post_forward(x)
 
 
     def get_decoder_feature_maps(self):
         return self.decoder_features
 
 
-#TODO: The ArcFace is not trained yet for face recognition (face identity), but just use the general pretrained object recognition model from pytorch. 
-class ArcFace(nn.Module):
+class IdtEncoder(nn.Module):
+
+    #TODO: Provide an option to choose different model from torchvision
     def __init__(self, opt):
-        self.resnet50 = torchvision.models.resnet50(pretrained=True)
+        self.model = torchvision.models.resnet101(
+            num_classes=opt["num_classes"])
+        self.model.load_state_dict(
+            torch.load(opt["pretrained_model"], 
+            map_location=opt["map_location"]))
 
 
     def forward(self, x):
-        return self.resnet50(x)
-
-
-
+        return self.model(x)
