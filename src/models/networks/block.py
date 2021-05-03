@@ -19,36 +19,32 @@ class AADResBlk(nn.Module):
         super().__init__()
         self.model = []
         self.diff_in_out_channels = out_channels != in_channels
+        conv_kernel_size = opt["conv"]["kernel_size"]
+        conv_stride = opt["conv"]["stride"]
+        conv_padding = opt["conv"]["padding"]
 
         self.model.append(nn.sequential([
             AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
-            nn.Conv2d(
-                in_channels,
-                in_channels,
-                opt["conv"]["kernel_size"]
-                )
+            nn.Conv2d(in_channels, in_channels, conv_kernel_size, conv_stride,
+                conv_padding)
             ]))
         self.model.append(nn.sequential([
             AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
             nn.Conv2d(
-                in_channels,
-                out_channels,
-                opt["conv"]["kernel_size"]
-                )
+                in_channels, out_channels, conv_kernel_size, conv_stride,
+                conv_padding)
             ]))
 
         if self.diff_in_out_channels:
-            self.input_transform = nn.sequential(
-                AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
+            self.input_transform = nn.sequential([
+                AADNorm(in_channels, attr_channels, idt_channels, 
+                    opt["AADNorm"]),
                 nn.ReLU(),
-                nn.Conv2d(
-                    in_channels,
-                    out_channels,
-                    opt["conv"]["kernel_size"]
-                    )                
-                )
+                nn.Conv2d(in_channels, out_channels, conv_kernel_size, 
+                    conv_stride, conv_padding)
+            ])
 
 
     def forward(self, x):
