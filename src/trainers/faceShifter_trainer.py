@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class FaceShifterTrainer:
     def __init__(self, opt): 
         self.opt = opt
-        self.last_d_output = 0
         self.trainer_opt = opt["FaceShifterTrainer"]
         self.model = FaceShifterModel(opt)
         self.init_model()
@@ -66,15 +65,17 @@ class FaceShifterTrainer:
         self.g_optimizer.step()
 
 
-    def fit_d(self, data, label=1):
-        """Summary
+    #TODO: the loss is implemented in different from that of project SPADE. Consider if the difference could change performance of the trainer
+    def fit_d(self, data):
+        """Fit the discriminator using both real and generated data
         
         Args:
             data (TYPE): a batch of either real or synthesized images
-            label (int, optional): 1=real; -1=fake
         """
-        self.last_d_output = self.model(data, 2)
-        loss = self.d_criterion(y, label)
+        real_pred, generated_pred = self.model(data, 2)
+        real_loss = self.d_criterion(real_pred, True)
+        generated_loss = self.d_criterion(generated_pred, False)
+        loss = real_loss + generated_loss
         self.d_optimizer.zero_grad()
         loss.backward()
         self.d_optimizer.step()        
