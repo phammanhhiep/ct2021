@@ -18,14 +18,16 @@ class FaceShifterModel(nn.Module):
         """Summary
         
         Args: 
-            x (TYPE): Description
+            x (TYPE): (source images, target images)
             mode (int): 1=generator, 2=discriminator 
         """
         h = None
         if mode == 1:
             h = self.g(x)
         elif mode == 2:
-            h = self.d(x)
+            x_hat = self.g(x)
+            x = torch.cat(x)
+            h = self.d(x, x_hat)
         else:
             raise ValueError("Unknown mode: " + mode)
         return h
