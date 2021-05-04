@@ -57,7 +57,7 @@ class MultiScaleGanLoss(nn.Module):
 
 
     #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here.
-    def forward(self, y, t=1, compute_d_loss=True):
+    def forward(self, y, label=True, compute_d_loss=True):
         """Reshape the input and compute loss for individual scales first, and
         then sum up the losses. 
         
@@ -65,35 +65,42 @@ class MultiScaleGanLoss(nn.Module):
             y (TYPE): a batch of multi-scale discriminator outputs, each of
             which is a list of 5D tensors; size of y is expected to be
             (batch_size, num_d, 1, H, W)
-            t (TYPE): 1 for real image; -1 for fake image
+            label (TYPE): True for real image; False for fake image
             compute_d_loss (bool, optional): compute d loss or g loss
         
         Returns:
-            TYPE: Description
+            float: Description
         """ 
-        y = torch.reshape(y, (1, 0, 2))
-        loss = torch.zeros(y.size()[1])
+        t = 1 if label else -1
+        y = torch.reshape(y, (1, 0, 2, 3, 4))
+        loss = 0
         for yi in y:
             loss += self._hinge_loss(yi, t, compute_d_loss)
         return loss
 
 
     def _hinge_loss(self, y, t=1, compute_d_loss=True):
-        """Summation of individual hinge losses.
-        
+        """
+        It is required to compute the mean in spatial dimension first, because 
+        patchGAN is supposed to be used.
         Args:
             y (TYPE): a batch of outputs from a discriminator of size 
             (B, 1, H, W)
             t (bool, optional): 1=real, -1=fake 
             compute_d_loss (bool, optional): compute loss for d or g.
+            (B, 1, H, W)
+        
+        Returns:
+            float: Description
         """
         loss = 0
         if compute_d_loss:
             loss = -torch.mean(
-                torch.min(self.zeros(y.size()), -1 + t * y), 
-                dim=0)
+                torch.min(
+                    self.zeros(y.size()), 
+                    torch.mean(-1 + t * y, dim=(2,3))))
         else:
-            loss = -torh.mean(y, dim=0)
+            loss = -torch.mean(torch.mean(y, dim=(2,3)))
         return loss
 
 
