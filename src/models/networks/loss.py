@@ -115,19 +115,25 @@ class AttrLoss(nn.Module):
         super().__init__()
 
 
-    def forward(self, xfsq, yfsq):
+    def forward(self, x_attrs, y_attrs):
         """
+        Reshaping x_attrs and y_attrs is required because L2 is computed for
+        each pair of individual attributes.
+
         Args:
-            xfsq (TYPE): sequence of multi-level attributes of the target image
-            yfsq (TYPE): sequence of multi-level attributes of the synthesized 
-            image
+            x_attrs (TYPE): a batch of multi-level attributes of the target 
+            image, with size (B, num_attrs, C, H, W)
+            y_attrs (TYPE): a batch of multi-level attributes of the synthesized 
+            image, with size (B, num_attrs, C, H, W)
         
         Returns:
             TYPE: Description
         """
         loss = 0
-        for xf, yf in zip(xfsq, yfsq):
-            loss += nn.functional.mse_loss(xf, yf, reduction="sum")
+        x_attrs = x_attrs.reshape(1,0,2,3,4)
+        y_attrs = y_attrs.reshape(1,0,2,3,4)
+        for x, y in zip(x_attrs, y_attrs):
+            loss += nn.functional.mse_loss(x, y)
         return 0.5 * loss
 
 
@@ -145,8 +151,8 @@ class RecLoss(nn.Module):
         """Summary
         
         Args:
-            x (TYPE): target (or source) image
-            y (TYPE): sythesized image
+            x (TYPE): a batch of target (or source) image
+            y (TYPE): a batch of corresponding sythesized image
             reconstructed (bool, optional): whether same source and target image
         
         Returns:
@@ -161,20 +167,18 @@ class IdtLoss(nn.Module):
         super().__init__()
 
 
-    #TODO: verify the assumption about the size of inputs, and if the dim parameter of cosine_similarity is correct
-    #TODO: verify summing up across spatial dimensions is appropriate to represent the loss
-    def forward(self, xf, yf):
-        """Summary
+    def forward(self, x_idt, y_idt):
+        """The loss is summation of individual loss for each pair of identity
+        (x,y).
         
         Args:
-            xf (TYPE): feature map of the last layer before fc layer in
-            the identity encoder, of the source image. The shape is supposed to 
-            be (B,C,W,H)
-            yf (TYPE): the feature map of the synthesized image.
+            x_idt (TYPE): a batch of identities of real images obtained from an
+            indentity encoder, with size (B, C, H, W)
+            y_idt (TYPE): corresponding batch of identities of the synthesized
+            images
         
         Returns:
-            TYPE: A tensor of size (B, 1)
+            float: in range [0, 1]
         """
         return torch.sum(
-            1 - nn.functional.cosine_similarity(xf, yf, dim=1), 
-            dim=(1,2))
+            1 - nn.functional.cosine_similarity(x_idt, y_idt, dim=1))
