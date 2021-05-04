@@ -19,23 +19,27 @@ class MultiScaleDiscriminator(nn.Module):
                 PatchGANDiscriminator(opt["PatchGANDiscriminator"]))
 
 
-    def forward(self, x):
+    def forward(self, x, x_hat):
         """
-        
         Args:
-            x (TYPE): Description
+            x (TYPE): a batch of real images 
+            x_hat (TYPE): a batch of synthesized images
         
         Returns:
             TYPE: Description
         """
-        h = []
-        h.append(self.model[0](x))
+        pred = []
+        data = [x, x_hat]
 
-        for n in range(1, self.num_ds):
-            x = self.downsample(x)
-            h.append(self.model[n](x))
+        for d in data:
+            pred_i = []    
+            pred_i.append(self.model[0](d))
 
-        return h
+            for n in range(1, self.num_ds):
+                d = self.downsample(d)
+                pred_i.append(self.model[n](d))
+            pred.append(pred_i)
+        return pred
 
 
     #TODO: consider argument of nn.functional.interpolate
