@@ -106,13 +106,34 @@ class IdtEncoder(nn.Module):
 
     #TODO: Provide an option to choose different model from torchvision
     def __init__(self, opt):
+        """The encoder is assumed to be a pretrained model, and thus should not
+        be optimzed with the rest of the model.
+        
+        Args:
+            opt (TYPE): Description
+        """
+        super().__init__()
         self.model = torchvision.models.resnet101(
             num_classes=opt["num_classes"])
 
         if opt["pretrained_model"] is not None:
             self.model.load_state_dict(torch.load(opt["pretrained_model"], 
                 map_location=opt["map_location"]))
+        self.model.requires_grad_(False)
 
 
+    #TOD0: consider to downsample the input as in https://github.com/phammanhhiep/unoffical-faceshifter
+    #TODO: consider to use the last layer before the FC layer is used as identity features, as described in the original paper FaceShifter 
     def forward(self, x):
-        return self.model(x)
+        """The output tensor could be obtained by using reshape, but that 
+        implies to hardcord the size of expected output, and thus unsqueeze is
+        used instead.
+        
+        Args:
+            x (TYPE): a batch of tensors (representing images)
+        
+        Returns:
+            tensor: of size (B, C, 1, 1_
+        """
+        h = self.model(x)
+        return h.unsqueeze(-1).unsqueeze(-1)
