@@ -14,19 +14,23 @@ class FaceShifterModel(nn.Module):
         self.create_d(opt["MultiScaleDiscriminator"])
 
 
-    def forward(self, x, mode=1):
-        """Summary
+    #TODO: consider if the unbalanced data fed to discriminator affects its performance
+    def forward(self, xs, xt, mode=1):
+        """Both source and target images are fed to the discriminator, beside
+        the synthesized images, i.e. the number of real images is doulbe that of
+        synthesized image. 
         
         Args: 
-            x (TYPE): (source images, target images)
+            xs (TYPE): a batch of source images
+            xt (TYPE): a batch of target images
             mode (int): 1=generator, 2=discriminator 
         """
         h = None
         if mode == 1:
-            h = self.g(x)
+            h = self.g(xs, xt)
         elif mode == 2:
-            x_hat = self.g(x)
-            x = torch.cat(x)
+            x_hat = self.g(xs, xt)
+            x = torch.cat((xs, xt))
             h = self.d(x, x_hat)
         else:
             raise ValueError("Unknown mode: " + mode)
