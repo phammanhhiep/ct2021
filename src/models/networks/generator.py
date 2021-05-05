@@ -2,8 +2,8 @@ import torch
 from torch import nn
 
 
-from models.networks.block import AADResBlk
-from models.networks.encoder import AttrEncoder, IdtEncoder
+from src.models.networks.block import AADResBlk
+from src.models.networks.encoder import AttrEncoder, IdtEncoder
 
 
 class AEINet(nn.Module):
@@ -55,49 +55,55 @@ class AADGenerator(nn.Module):
         super().__init__()
         self.model = []
         self.upsample_scale = opt["upsample_scale"]
+        self.num_AADResBlk = opt["num_AADResBlk"]
         attr_channel_list = opt["attr_channel_list"]
-        num_AADResBlk = opt["num_AADResBlk"]
         AADResBlk_out_channel_list = opt["AADResBlk_out_channel_list"]
         idt_channels = opt["idt_channels"]
+        conv_tr_out_channels = opt["conv_tr"]["out_channels"]
+        conv_tr_kernel_size = 2
+        conv_tr_stride = 1
+        conv_tr_padding = 0
 
         self.conv_tr = nn.ConvTranspose2d(
             idt_channels,
-            opt["conv_tr"]["out_channels"],
-            opt["conv_tr"]["kernel_size"],
-            opt["conv_tr"]["stride"],
-            opt["conv_tr"]["padding"]
+            conv_tr_out_channels,
+            conv_tr_kernel_size,
+            conv_tr_stride,
+            conv_tr_padding
             )
 
-        in_size = opt["conv_tr"]["out_channels"]
-        for n in range(num_AADResBlk):
+        in_channels = conv_tr_out_channels
+        for n in range(self.num_AADResBlk):
             attr_channels = attr_channel_list[n]
             out_channels = AADResBlk_out_channel_list[n]
             self.model.append(AADResBlk(
-                in_size, attr_channels, idt_channels, out_channels, 
+                in_channels, attr_channels, idt_channels, out_channels, 
                 opt["AADResBlk"]))
-            in_size = out_channels
+            in_channels = out_channels
 
 
-    def forward(self, idt, attr_sq):
+    def forward(self, idt, attrs):
         """Summary
         
         Args:
             idt (TYPE): a batch of identity features of size (B, C, 1, 1)
-            attr_sq (TYPE): a batch of squences of attributes of size
+            attrs (TYPE): a batch of squences of attributes of size
             (num_attr, B, C, H, W)
         
         Returns:
             TYPE: Description
         """
         h = self.conv_tr(idt)
-        for blk, attr in zip(self.model, attr_sq):
-            h = self.upsample(blk((h, idt, attr)))
+        for i in range(self.num_AADResBlk):
+            h = self.model[i]((h, idt, attrs[i]))
+            if i < self.num_AADResBlk - 1:
+                h = self.upsample(h)
         return h
 
 
     def upsample(self, x):
         return nn.functional.interpolate(x, 
-            scale_factor=(1,1,self.upsample_scale, self.upsample),
+            scale_factor=(self.upsample_scale, self.upsample_scale),
             mode="bilinear", align_corners=True)
 
 
