@@ -6,7 +6,7 @@ from torch import nn
 
 
 from models.faceShifter_model import FaceShifterModel
-from networks.loss import AEINetLoss, GanLoss
+from networks.loss import AEINetLoss, MultiScaleGanLoss
 
 
 logger = logging.getLogger(__name__)
@@ -32,12 +32,12 @@ class FaceShifterTrainer:
                 self.opt["checkpoint"]["save_dir"])
 
 
-    #TODO: review the input of discriminator and generator
-    def fit(self, data, batch_index):
+    def fit(self, xs, xt, batch_index):
         """Summary
         
         Args:
-            data (TYPE): Description
+            xs (TYPE): a batch of source images
+            xt (TYPE): a batch of target images
             batch_index (TYPE): Description
         """
         if batch_index % self.trainer_opt["d_step_per_g"] == 0:
@@ -45,14 +45,14 @@ class FaceShifterTrainer:
         self.fit_d(data)
 
 
-    def fit_g(self, data):
+    def fit_g(self, xs, xt):
         """Summary
         
         Args:
-            data (TYPE): [source images, target images]
+            xs (TYPE): a batch of source images
+            xt (TYPE): a batch of target images
         """
-        xs, xt = data
-        y = self.model(data, 1)
+        y = self.model(xs, xt, 1)
         xs_idt = self.model.get_face_identity(xs)
         y_idt = self.model.get_face_identity(y)
         xt_attr = self.model.get_face_attribute(xt)
@@ -66,13 +66,14 @@ class FaceShifterTrainer:
 
 
     #TODO: the loss is implemented in different from that of project SPADE. Consider if the difference could change performance of the trainer
-    def fit_d(self, data):
+    def fit_d(self, xs, xt):
         """Fit the discriminator using both real and generated data
         
         Args:
-            data (TYPE): a batch of either real or synthesized images
+            xs (TYPE): a batch of source images
+            xt (TYPE): a batch of target images
         """
-        real_pred, generated_pred = self.model(data, 2)
+        real_pred, generated_pred = self.model(xs, xt, 2)
         real_loss = self.d_criterion(real_pred, True)
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
@@ -86,16 +87,16 @@ class FaceShifterTrainer:
         d_params = self.model.get_d_params()
 
         self.g_optimizer = torch.optim.Adam(g_params, 
-            lr=self.opt["trainer"]["optim"]["lr"],
-            beta=self.opt["trainer"]["optim"]["beta"])
+            lr=self.trainer_opt["optim"]["lr"],
+            beta=self.trainer_opt["optim"]["beta"])
         self.d_optimizer = torch.optim.Adam(d_params, 
-            lr=self.opt["trainer"]["optim"]["lr"],
-            beta=self.opt["trainer"]["optim"]["beta"])
+            lr=self.trainer_opt["optim"]["lr"],
+            beta=self.trainer_opt["optim"]["beta"])
 
 
     def create_criterion(self):
         self.g_criterion = AEINetLoss(self.opt)
-        self.d_criterion = GanLoss(self.opt)
+        self.d_criterion = MultiScaleGanLoss(self.opt)
 
 
     def update_optimizer(self, epoch):
@@ -104,6 +105,7 @@ class FaceShifterTrainer:
         Args:
             epoch (TYPE): Description
         """
+        #TODO: update optimizer
 
 
     def save_checkpoint(self, model_id, save_dir):
