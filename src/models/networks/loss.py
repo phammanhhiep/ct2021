@@ -47,8 +47,8 @@ class AEINetLoss(nn.Module):
         attr_loss = self.attr_criterion(xt_attr, y_attr)
         rec_loss = self.rec_criterion(xt, y, reconstructed=reconstructed)
         idt_loss = self.idt_criterion(xs_idt, y_idt)
-        return adv_loss + attr_loss*self.AttrLoss_w + rec_loss*self.RecLoss_w \
-            + idt_loss*self.IdtLoss_w
+        return adv_loss + attr_loss * self.AttrLoss_w + \
+            rec_loss * self.RecLoss_w + idt_loss * self.IdtLoss_w
 
 
 class MultiScaleGanLoss(nn.Module):
@@ -58,13 +58,12 @@ class MultiScaleGanLoss(nn.Module):
 
     #TODO: review the implementation of the hinge loss in project https://trello.com/c/cA9SYd0x. There are some complications which are not handled in here.
     def forward(self, y, label=True, compute_d_loss=True):
-        """Reshape the input and compute loss for individual scales first, and
-        then sum up the losses. 
+        """Sum the losses of individual discriminators. 
         
         Args:
-            y (TYPE): a batch of multi-scale discriminator outputs, each of
-            which is a list of 5D tensors; size of y is expected to be
-            (batch_size, num_d, 1, H, W)
+            y (TYPE): multi-scale discriminator outputs, each of
+            which is a list of 4D tensors; the size of ech component of y is 
+            (B, 1, H, W).
             label (TYPE): True for real image; False for fake image
             compute_d_loss (bool, optional): compute d loss or g loss
         
@@ -72,7 +71,6 @@ class MultiScaleGanLoss(nn.Module):
             float: Description
         """ 
         t = 1 if label else -1
-        y = torch.reshape(y, (1, 0, 2, 3, 4))
         loss = 0
         for yi in y:
             loss += self._hinge_loss(yi, t, compute_d_loss)
@@ -87,9 +85,7 @@ class MultiScaleGanLoss(nn.Module):
             y (TYPE): a batch of outputs from a discriminator of size 
             (B, 1, H, W)
             t (bool, optional): 1=real, -1=fake 
-            compute_d_loss (bool, optional): compute loss for d or g.
-            (B, 1, H, W)
-        
+            compute_d_loss (bool, optional): compute loss for d or g
         Returns:
             float: Description
         """
@@ -97,7 +93,7 @@ class MultiScaleGanLoss(nn.Module):
         if compute_d_loss:
             loss = -torch.mean(
                 torch.min(
-                    self.zeros(y.size()), 
+                    torch.zeros(y.size()), 
                     torch.mean(-1 + t * y, dim=(2,3))))
         else:
             loss = -torch.mean(torch.mean(y, dim=(2,3)))
