@@ -19,33 +19,27 @@ class MultiScaleDiscriminator(nn.Module):
                 PatchGANDiscriminator(opt["PatchGANDiscriminator"]))
 
 
-    def forward(self, x, x_hat):
+    def forward(self, x):
         """
         Args:
-            x (TYPE): a batch of real images 
-            x_hat (TYPE): a batch of synthesized images
+            x (TYPE): a batch of real or synthesis images 
         
         Returns:
-            TYPE: Description
+            list: predictions
         """
-        pred = []
-        data = [x, x_hat]
+        pred = []   
+        pred.append(self.model[0](x))
 
-        for d in data:
-            pred_i = []    
-            pred_i.append(self.model[0](d))
-
-            for n in range(1, self.num_ds):
-                d = self.downsample(d)
-                pred_i.append(self.model[n](d))
-            pred.append(pred_i)
+        for n in range(1, self.num_ds):
+            x = self.downsample(x)
+            pred.append(self.model[n](x))
         return pred
 
 
     #TODO: consider argument of nn.functional.interpolate
     def downsample(self, x):
         return nn.functional.interpolate(x, 
-            scale_factor=(1, 1, self.scale, self.scale))       
+            scale_factor=(self.scale, self.scale))       
 
 
 class PatchGANDiscriminator(nn.Module):
@@ -60,7 +54,7 @@ class PatchGANDiscriminator(nn.Module):
     def __init__(self, opt):
         super().__init__()
         num_conv_blks = opt["num_conv_blks"]
-        in_channels = opt["in_channel"]
+        in_channels = opt["in_channels"]
         out_channels_list = opt["conv"]["out_channel_list"]
         conv_kernel_size = opt["conv"]["kernel_size"]
         conv_stride = opt["conv"]["stride"]
@@ -80,7 +74,8 @@ class PatchGANDiscriminator(nn.Module):
             else:
                 self.model += [
                     nn.utils.spectral_norm(nn.Conv2d(
-                        in_channels, out_channels, kernel_size)),
+                        in_channels, out_channels, conv_kernel_size, 
+                        conv_stride, conv_padding)),
                     nn.InstanceNorm2d(out_channels),
                     nn.LeakyReLU(LeakyReLU_slope)
                     ]
@@ -91,7 +86,7 @@ class PatchGANDiscriminator(nn.Module):
                 out_channels, 1, conv_kernel_size, conv_stride, conv_padding)),
             nn.Sigmoid()
             ]
-        self.model = nn.sequential(self.model)
+        self.model = nn.Sequential(*self.model)
 
 
     def forward(self, x):
