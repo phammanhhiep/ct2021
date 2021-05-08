@@ -24,26 +24,28 @@ class AEINetLoss(nn.Module):
         self.IdtLoss_w = opt["loss_weights"]["IdtLoss"]
 
 
-    def forward(self, xt, y, xt_attr, y_attr, xs_idt,
-        y_idt, d_output, reconstructed=False):
+    def forward(self, xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output, 
+        reconstructed=False):
         """Summary
         
         Args:
             xt (TYPE): a batch of target images
             y (TYPE): a batch of generated images
-            xt_attr (TYPE): a batch of multi-level attributes of the target images
-            y_attr (TYPE): a batch of multi-level attributes of the generated 
-            images
+            xt_attr (TYPE): a list of batches of multi-level attributes of the 
+            target images, each of which of size (B, C, H, W)
+            y_attr (TYPE): a list of batches of multi-level attributes of the 
+            synthesized images, each of which of size (B, C, H, W)
             xs_idt (TYPE): a batch of identities of the source images
             y_idt (TYPE): a batch of identities of the generated images
-            d_output (TYPE): a batch of outputs of the discriminator
+            d_output (TYPE): multi-scale discriminator outputs which is a list of 
+            4D tensors; the size of ech component of y is (B, 1, H, W)
             reconstructed (bool, optional): whether source and target images are
             the same
         
         Returns:
             TYPE: Description
         """
-        adv_loss = self.adv_criterion(d_output, t=-1, compute_d_loss=False)
+        adv_loss = self.adv_criterion(d_output, label=False, compute_d_loss=False)
         attr_loss = self.attr_criterion(xt_attr, y_attr)
         rec_loss = self.rec_criterion(xt, y, reconstructed=reconstructed)
         idt_loss = self.idt_criterion(xs_idt, y_idt)
@@ -61,12 +63,10 @@ class MultiScaleGanLoss(nn.Module):
         """Sum the losses of individual discriminators. 
         
         Args:
-            y (TYPE): multi-scale discriminator outputs, each of
-            which is a list of 4D tensors; the size of ech component of y is 
-            (B, 1, H, W).
+            y (TYPE): multi-scale discriminator outputs which is a list of 
+            4D tensors; the size of ech component of y is (B, 1, H, W)
             label (TYPE): True for real image; False for fake image
             compute_d_loss (bool, optional): compute d loss or g loss
-        
         Returns:
             float: Description
         """ 
@@ -117,17 +117,15 @@ class AttrLoss(nn.Module):
         each pair of individual attributes.
 
         Args:
-            x_attrs (TYPE): a batch of multi-level attributes of the target 
-            image, with size (B, num_attrs, C, H, W)
-            y_attrs (TYPE): a batch of multi-level attributes of the synthesized 
-            image, with size (B, num_attrs, C, H, W)
+            x_attrs (TYPE): a list of batches of multi-level attributes of the 
+            target images, each of which of size (B, C, H, W)
+            y_attrs (TYPE): a list of batches of multi-level attributes of the 
+            synthesized images, each of which of size (B, C, H, W)
         
         Returns:
             TYPE: Description
         """
         loss = 0
-        x_attrs = x_attrs.reshape(1,0,2,3,4)
-        y_attrs = y_attrs.reshape(1,0,2,3,4)
         for x, y in zip(x_attrs, y_attrs):
             loss += nn.functional.mse_loss(x, y)
         return 0.5 * loss
@@ -152,7 +150,7 @@ class RecLoss(nn.Module):
             reconstructed (bool, optional): whether same source and target image
         
         Returns:
-            TYPE: Description
+            float: Description
         """
         return 0 if not reconstructed else \
             0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
@@ -174,7 +172,7 @@ class IdtLoss(nn.Module):
             images
         
         Returns:
-            float: in range [0, 1]
+            float: Description
         """
         return torch.sum(
             1 - nn.functional.cosine_similarity(x_idt, y_idt, dim=1))
