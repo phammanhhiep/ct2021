@@ -93,7 +93,7 @@ class MultiScaleGanLoss(nn.Module):
         if compute_d_loss:
             loss = -torch.mean(
                 torch.min(
-                    torch.zeros(y.size()), 
+                    torch.zeros(y.size()[:2]), 
                     torch.mean(-1 + t * y, dim=(2,3))))
         else:
             loss = -torch.mean(torch.mean(y, dim=(2,3)))
