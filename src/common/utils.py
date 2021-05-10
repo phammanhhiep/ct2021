@@ -14,13 +14,13 @@ def create_root_logger(level=logging.INFO):
 
 
 def save_net(net, label, save_dir):
-    name = "{}.pth".format(epoch, label)
+    name = "{}.pth".format(label)
     save_path = os.path.join(save_dir, name)
     torch.save(net.state_dict(), save_path)
 
 
 #TODO: the implementation assume model is load to a CPU
 def load_net(net, label, load_dir):
-    name = "{}.pth".format(epoch, label)
+    name = "{}.pth".format(label)
     load_path = os.path.join(load_dir, name)
     net.load_state_dict(torch.load(load_path), map_location=torch.device("cpu"))
