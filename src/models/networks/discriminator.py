@@ -12,7 +12,7 @@ class MultiScaleDiscriminator(nn.Module):
         super().__init__()
         self.num_ds = opt["num_ds"]
         self.scale = opt["downsample_scale_factor"]
-        self.model = []
+        self.model = nn.ModuleList()
 
         for n in range(self.num_ds):
             self.model.append(

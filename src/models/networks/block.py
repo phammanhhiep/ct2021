@@ -1,13 +1,15 @@
 import torch
 from torch import nn
 
-from models.networks.normalization import AADNorm
+from src.models.networks.normalization import AADNorm
 
 
 class AADResBlk(nn.Module):
     def __init__(self, in_channels, attr_channels, idt_channels, out_channels, 
         opt):
-        """Summary
+        """The block takes into account when input and output channels 
+        are different. The output, previous activation (input), and attributes 
+        are supposed to have the same spatial dimensions.
         
         Args:
             in_channels (TYPE): Description
@@ -19,38 +21,35 @@ class AADResBlk(nn.Module):
         super().__init__()
         self.model = []
         self.diff_in_out_channels = out_channels != in_channels
-        conv_kernel_size = opt["conv"]["kernel_size"]
-        conv_stride = opt["conv"]["stride"]
-        conv_padding = opt["conv"]["padding"]
+        conv_kernel_size = 3
+        conv_stride = 1
+        conv_padding = 1
 
-        self.model.append(nn.sequential([
+        self.model.append(nn.Sequential(
             AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
             nn.Conv2d(in_channels, in_channels, conv_kernel_size, conv_stride,
                 conv_padding)
-            ]))
-        self.model.append(nn.sequential([
+            ))
+        self.model.append(nn.Sequential(
             AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
             nn.ReLU(),
-            nn.Conv2d(
-                in_channels, out_channels, conv_kernel_size, conv_stride,
+            nn.Conv2d(in_channels, out_channels, conv_kernel_size, conv_stride,
                 conv_padding)
-            ]))
+            ))
 
         if self.diff_in_out_channels:
-            self.input_transform = nn.sequential([
+            self.input_transform = nn.Sequential(
                 AADNorm(in_channels, attr_channels, idt_channels, 
                     opt["AADNorm"]),
                 nn.ReLU(),
                 nn.Conv2d(in_channels, out_channels, conv_kernel_size, 
                     conv_stride, conv_padding)
-            ])
+            )
 
 
     def forward(self, x):
-        """The method also takes into account when input and output channels are 
-        different. 
-        
+        """
         Args:
             x (TYPE): (activation output, identity, attribute) 
         

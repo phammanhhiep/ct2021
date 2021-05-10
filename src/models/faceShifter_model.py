@@ -2,9 +2,9 @@ import torch
 from torch import nn
 
 
-from networks.generator import AEINet
-from networks.discriminator import MultiScaleDiscriminator
-from common import utils
+from src.models.networks.generator import AEINet
+from src.models.networks.discriminator import MultiScaleDiscriminator
+from src.common import utils
 
 
 class FaceShifterModel(nn.Module):
@@ -15,15 +15,24 @@ class FaceShifterModel(nn.Module):
 
 
     #TODO: consider if the unbalanced data fed to discriminator affects its performance
-    def forward(self, xs, xt, mode=1):
+    #TODO: raise exception when mode is 3 but x_hat is not provided
+    def forward(self, xs, xt, mode=1, x_hat=None):
         """Both source and target images are fed to the discriminator, beside
         the synthesized images, i.e. the number of real images is doulbe that of
         synthesized image. 
         
-        Args: 
+        Args:
             xs (TYPE): a batch of source images
             xt (TYPE): a batch of target images
-            mode (int): 1=generator, 2=discriminator 
+            x_hat (None, optional): a batch of generated images 
+            mode (int): 1="generate images", 2="discriminate both real and 
+            generated images", 3="discriminate generated images" 
+        
+        Returns:
+            TYPE: Description
+        
+        Raises:
+            ValueError: Description
         """
         h = None
         if mode == 1:
@@ -31,7 +40,11 @@ class FaceShifterModel(nn.Module):
         elif mode == 2:
             x_hat = self.g(xs, xt)
             x = torch.cat((xs, xt))
-            h = self.d(x, x_hat)
+            h1 = self.d(x)
+            h2 = self.d(x_hat)
+            h = [h1, h2]
+        elif mode == 3:
+            h = self.d(x_hat)
         else:
             raise ValueError("Unknown mode: " + mode)
         return h
@@ -39,12 +52,12 @@ class FaceShifterModel(nn.Module):
 
     def create_g(self, opt):
         self.g = AEINet(opt)
-        self.g_checkpoint_name = "{}_g" # modelid_g
+        self.g_checkpoint_name = "{}_g" # e.g. modelid_g
     
 
     def create_d(self, opt):
         self.d = MultiScaleDiscriminator(opt)
-        self.d_checkpoint_name = "{}_d" # e.g. modelid_g
+        self.d_checkpoint_name = "{}_d" # e.g. modelid_d
 
 
     def get_g_params(self):
@@ -64,7 +77,7 @@ class FaceShifterModel(nn.Module):
     def get_face_attribute(self, x):
         attr_encoder = self.g.get_attr_encoder()
         attr_encoder(x)
-        return attr_encoder.get_decoder_feature_maps()
+        return attr_encoder.get_decoder_features()
 
 
     def save(self, model_id, save_dir): 

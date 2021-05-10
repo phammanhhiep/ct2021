@@ -17,18 +17,18 @@ class AEINet(nn.Module):
         self.generator = AADGenerator(opt["AADGenerator"])
 
 
-    def forward(self, x):
+    def forward(self, xs, xt):
         """Summary
         
         Args:
-            x (TYPE): [source images, target images]
+            xs (TYPE): a batch of source images
+            xt (TYPE): a batch of target images
         Returns:
             TYPE: Description
         """
-        xs, xt = x
         idt = self.idt_encoder(xs)
         _ = self.attr_encoder(xt)
-        multi_level_attrs = self.attr_encoder.get_decoder_feature_maps()
+        multi_level_attrs = self.attr_encoder.get_decoder_features()
         return self.generator(idt, multi_level_attrs)
 
 
