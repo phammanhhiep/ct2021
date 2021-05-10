@@ -47,6 +47,7 @@ class Dataset(data.Dataset):
             TYPE: Description
         """
         sample_path = self.data_paths[index]
-        sample = Image.open(sample_path)
+        sample = Image.open(sample_path) 
+        sample = sample.convert("RBG")
         sample = self.transform(sample)
         return sample
