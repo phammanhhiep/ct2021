@@ -1,4 +1,4 @@
-data:
+dataset:
   train: "FFHQ"
   validation: "FFHQ"
   num_worker: 1
@@ -11,8 +11,7 @@ CelebAHQ:
   train: "data/celebahq/train_data_list"
   validation: "data/celebahq/validation_data_list"
 
-trainer:
-  name: "FaceShifterTrainer"
+FaceShifterTrainer:
   max_epochs: 1000
   continue:
     status: False
@@ -21,62 +20,70 @@ trainer:
   optim:
     name: "Adam"
     lr: 1e-3
-    beta: [0.1, 0.2]
+    betas: [0.1, 0.2]
 
-model:
-  name: "FaceShifterModel"
-  generator: "AEINet"
-  discriminator: "MultiScaleDiscriminator"
+AEINet:
+  AttrEncoder:
+    in_channels: 3
+    LeakyReLU_slope: 0.2
+    encoder:
+      num_blks: 7
+      conv:
+        out_channel_list: [32, 64, 128, 256, 512, 1024, 1024]
+        kernel_size: 4
+        stride: 2
+        padding: 1
+    decoder:
+      num_blks: 6
+      conv_tr:
+        in_channel_list: [1024, 2048, 1024, 512, 256, 128]
+        out_channel_list: [1024, 512, 256, 128, 64, 32]
+        kernel_size: 4
+        stride: 2
+        padding: 1
 
-AttrEncoder:
-  encoder:
-    num_blks: 6
-    conv:
-      in_channels: null
-      out_channels: null
-      kernel_size: null
-  decoder:
-    num_blks: 5
+  AADGenerator:
+    num_AADResBlk: 8
+    AADResBlk_out_channel_list: [1024, 1024, 1024, 512, 256, 128, 64, 3]
+    attr_channel_list: [2048, 1024, 512, 256, 128, 64, 64]
+    idt_channels: 256 # the number of features of the idenity which is assumed to be 1D vector
     conv_tr:
-      in_channels: null
-      out_channels: null
-      kernel_size: null      
-  last_layer: null
+      out_channels: 1024
+    upsample_scale: 2.0
+    AADResBlk:
+      ADDNorm: null
 
 ArcFace:
   num_classes: null
   pretrained_model: "experiments/idt_encoder/Arcface.pth"
-  map_location: "cpu"    
+  map_location: "cpu" 
 
-AADGenerator:
-  num_AADResBlk: 8
-  AADResBlk_out_channel_list: [1024, 1024, 1024, 512, 256, 128, 64, 3]
-  attr_channel_list: [] #TODO: provide attr_channel_list
-  idt_channels: 256 # the number of features of the idenity which is assumed to be 1D vector
-  conv_tr:
-    out_channels: 1024
-    kernel_size: 2
-  AADResBlk:
-    ADDNorm:
-      mask_conv:
-        kernel_size: 3
-      beta_conv:
-        kernel_size: 3          
-      gamma_conv:
-        kernel_size: 3 
+MultiScaleDiscriminator:
+  num_ds: 3
+  downsample_scale_factor: 0.5
+  PatchGANDiscriminator:
+    LeakyReLU_slope: 0.2
+    num_conv_blks: 6
+    in_channels: 3
     conv:
-      kernel_size: 3
-    input_transform:
-      ADDNorm: null
-      conv:
-        out_channels: null
-        kernel_size: null
-  last_layer:
-    in_channels: null
-    out_channels: null
-    kernel_size: null
+      out_channel_list: [64, 128, 256, 512, 512, 512]
+      kernel_size: 4
+      stride: 2
+      padding: 2
 
-MultiScaleDiscriminator: nulls
+AEINetLoss:
+  loss_weights:
+    AttrLoss: 10
+    RecLoss: 10
+    IdtLoss: 5
+
+GANLoss: null
+
+AttrLoss: null
+
+RecLoss: null
+
+IdtLoss: null
 
 checkpoint:
   save_dir: "checkpoint"
