@@ -1,31 +1,33 @@
 import os
 import random
 import logging
+from PIL import Image
 
 
 import numpy as np
-from skimage import Image, io
-from skimage.color import gray2rgb
-import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms as T
 
 
 class Dataset(data.Dataset):
-    def __init__(self, data_list, transform):
-        """It represents one or more collections of data. The implementation
-        assumes only one dataset is passed at one time.   
+    def __init__(self, data_list, transforms=None):
+        """Each instance represent a dataset.   
         
         Args:
-            data_lists (TYPE): path to the file that contains a list of names of
-            file in the dataset
-            transform (TYPE): Description
+            data_lists (TYPE): path to the file that contains a list of file in
+            the dataset
+            transform (TYPE): a composite of transformations that are applied to
+            every data point in the dataset
         """
-        self.transform = transform
         with open(data_list, "r") as fd:
             self.data_paths = fd.readlines()
         self.data_paths = np.random.permutation(self.data_paths)
+        if transforms is None:
+            self.transforms = T.Compose([
+                T.Resize(256),
+                T.ToTensor()
+                ])
 
 
     def __len__(self):
@@ -45,6 +47,6 @@ class Dataset(data.Dataset):
             TYPE: Description
         """
         sample_path = self.data_paths[index]
-        sample = io.imread(sample_path)
+        sample = Image.open(sample_path)
         sample = self.transform(sample)
         return sample
