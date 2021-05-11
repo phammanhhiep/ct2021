@@ -6,7 +6,7 @@ from PIL import Image
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils import data
 from torchvision import transforms as T
 
 
@@ -25,16 +25,13 @@ class Dataset(data.Dataset):
         self.data_paths = np.random.permutation(self.data_paths)
         if transforms is None:
             self.transforms = T.Compose([
-                T.Resize(256),
+                T.Resize((256, 256)),
                 T.ToTensor()
                 ])
 
 
     def __len__(self):
-        count = 0
-        for d in self.data_paths:
-            count += len(d)
-        return count
+        return len(self.data_paths)
 
 
     def __getitem__(self, index):
@@ -47,7 +44,6 @@ class Dataset(data.Dataset):
             TYPE: Description
         """
         sample_path = self.data_paths[index]
-        sample = Image.open(sample_path) 
-        sample = sample.convert("RBG")
-        sample = self.transform(sample)
+        sample = Image.open(sample_path.replace("\n", ""))
+        sample = self.transforms(sample)
         return sample
