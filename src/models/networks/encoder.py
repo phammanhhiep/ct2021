@@ -125,15 +125,12 @@ class IdtEncoder(nn.Module):
     #TOD0: consider to downsample the input as in https://github.com/phammanhhiep/unoffical-faceshifter
     #TODO: consider to use the last layer before the FC layer is used as identity features, as described in the original paper FaceShifter 
     def forward(self, x):
-        """The output tensor could be obtained by using reshape, but that 
-        implies to hardcord the size of expected output, and thus unsqueeze is
-        used instead.
-        
+        """
         Args:
             x (TYPE): a batch of tensors (representing images)
         
         Returns:
-            tensor: of size (B, C, 1, 1_
+            tensor: of size (B, C, 1, 1)
         """
         h = self.model(x)
         return h.unsqueeze(-1).unsqueeze(-1)
