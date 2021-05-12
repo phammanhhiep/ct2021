@@ -22,17 +22,12 @@ class HopeNet(nn.Module):
         they are not probabilities). See "[2017] Fine-Grained Head Pose 
         Estimation Without Keypoints (Ruiz et al)" for details about the
         architecture.
-
-        Args:
-            block (TYPE, optional): Description
-            layers (list, optional): Description
-            num_bins (int, optional): number of bins for an angle
         """
         super().__init__()
         block = torchvision.models.resnet.Bottleneck
         layers = [3, 4, 6, 3]
-        self.num_bins = 66
-        self.idx_tensor = torch.tensor(range(self.num_bins))
+        num_bins = 66
+        self.idx_tensor = torch.tensor(range(num_bins))
 
         self.model = torchvision.models.resnet50()
         del self.model.fc
@@ -43,6 +38,14 @@ class HopeNet(nn.Module):
 
 
     def forward(self, x):
+        """Summary
+        
+        Args:
+            x (TYPE): a batch of images of size (B, C, H, W) 
+        
+        Returns:
+            TYPE: a list of tensor of size (B, num_bins)
+        """
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x)
@@ -62,6 +65,7 @@ class HopeNet(nn.Module):
         return pre_yaw, pre_pitch, pre_roll
 
 
+    @torch.no_grad()
     def to_degree(self, x):
         """The formula follow the training procedure of the related research. 
         
@@ -69,11 +73,12 @@ class HopeNet(nn.Module):
             x (TYPE): output of the network [pre_yaw, pre_pitch, pre_roll]
         """
         d = []
+        batch_size = x[0].size()[0]
         for xi in x:
-            p = F.softmax(xi)
-            di = torch.sum(p.data[0] * self.idx_tensor) * 3 - 99
+            p = F.softmax(xi, dim=1)
+            di = torch.sum(p * self.idx_tensor, dim=1) * 3 - 99
             d.append(di)
-        return torch.FloatTensor(d)
+        return torch.cat(d).reshape((len(x), batch_size))
 
 
     def load(self, label, save_dir):
