@@ -1,0 +1,17 @@
+log:
+  save_dir: "log"
+
+statistics: "experiments/stats/{}_three_stats.csv"
+
+generated_image:
+  save_dir: "experiments/images/"
+
+model: 
+  name: "20210511"
+  load_dir: "experiments/models/"
+
+head_pose_estimator:
+  name: "hopenet_robust_alpha1"
+  load_dir: "experiments/head_pose_estimator"
+
+data: "datasets/ffhq/evaluation_data_list.dat"
