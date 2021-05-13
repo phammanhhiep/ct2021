@@ -51,10 +51,10 @@ class FaceShifterTrainer:
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
                 logger.debug("Fetch batch: epoch {} - batch {}".format(epoch, bi))
-                xs, xt = batch_data[:source_size], batch_data[source_size:]
+                xs, xt, reconstructed = batch_data
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
-                    self.fit_g(xs, xt)
+                    self.fit_g(xs, xt, reconstructed)
                     logger.debug("Fit g: epoch {} - batch {}".format(epoch, bi))
                 
                 self.fit_d(xs, xt)
@@ -66,12 +66,14 @@ class FaceShifterTrainer:
 
 
     #TODO: save loss values 
-    def fit_g(self, xs, xt):
+    def fit_g(self, xs, xt, reconstructed):
         """Summary
         
         Args:
             xs (TYPE): a batch of source images
             xt (TYPE): a batch of target images
+            reconstructed (TYPE): Description
+        
         """
         y = self.model(xs, xt, mode=1)
         xs_idt = self.model.get_face_identity(xs)
@@ -80,7 +82,8 @@ class FaceShifterTrainer:
         y_attr = self.model.get_face_attribute(y)
         d_output = self.model(None, None, mode=3, x_hat=y)
 
-        loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output)
+        loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,
+            reconstructed)
         self.g_optimizer.zero_grad()
         loss.backward()
         self.g_optimizer.step()
