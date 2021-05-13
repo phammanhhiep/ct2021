@@ -8,7 +8,6 @@ import torch
 import torchvision
 
 
-from src.common.utils import create_root_logger
 from src.options.options import EvalOptions
 from data.dataset import Dataset
 from src.models.faceShifter_model import FaceShifterModel
@@ -18,15 +17,13 @@ from src.models.networks.head_pose_estimator import HopeNet
 #TODO: The original research use CosFace (https://trello.com/c/jSfB5Dpz) to extract identity vector, but the current implementation use ArcFace instead
 #TODO: compute fe_measure
 #TODO: save evaluation result
-def evaluate(logger):
+def evaluate(opt, logger):
     """Summary
     
     Args:
         opt (TYPE): Description
         logger (TYPE): Description
     """
-    opt = EvalOptions(); opt = opt.get_opt()
-
     model = FaceShifterModel()
     model.load(opt["model"]["name"], opt["model"]["load_dir"], load_d=False)
     model.eval()
@@ -40,6 +37,8 @@ def evaluate(logger):
 
     data_list = opt["dataset"]["evaluation"]
     data_root_dir = opt["dataset"]["root_dir"]
+    batch_size = opt["dataset"]["batch_size"]
+    num_worker = opt["dataset"]["num_worker"]
 
     date_str = datetime.today().strftime('%Y%m%d')
     img_name = date_str + "_{}_{}.png"
@@ -53,13 +52,13 @@ def evaluate(logger):
     idt_dist = []
 
     dataset = Dataset(data_root_dir, data_list, return_name=True)
-    dataloader = data.DataLoader(dataset, batch_size=2, shuffle=True)
-    generated_count = len(dataset) / 2
-
-    logger.debug("Evaluate dataset: {}".format(data_list))
+    dataloader = data.DataLoader(dataset, batch_size=batch_size, 
+        num_workers=num_worker, shuffle=False)
+    generated_count = len(dataset)
 
     for j, batch_data in enumerate(dataloader):
-        xs, xt = batch_data[0][:1], batch_data[0][1:]
+        logger.debug("Generate batch of images: #{}".format(j))
+        xs, xt, reconstructed, xs_names, xt_names = batch_data
         x_hat = model(xs, xt)
         
         idt_retrieval(xs, xt, x_hat, model, idt_dist)
@@ -67,19 +66,18 @@ def evaluate(logger):
         fe_measure += facial_expression_error(xt, x_hat, 
             facial_expression_estimator)
 
-        result.append((x_hat, batch_data[1]))
-        logger.debug("Generate image: #{}".format(j))
+        logger.debug("Save {} generated images".format(x_hat.size()[0]))
+        save_generated_images((x_hat, xs_names, xt_names), img_name, j,
+            opt["generated_image"]["save_dir"])
 
     idt_measure = len(idt_dist) / generated_count
     hp_measure = hp_measure / generated_count
     fe_measure = fe_measure / generated_count
 
 
-    save_generated_images(result, img_name, opt["generated_image"]["save_dir"])
+    logger.debug("Save stat results")
     save_evaluation_results(
         (idt_measure, hp_measure.item(), fe_measure.item()), stat_pth)
-
-    logger.debug("Save generated images and evaluation results")
 
 
 def idt_retrieval(xs, xt, y, model, idt_dist):
@@ -154,20 +152,19 @@ def facial_expression_error(x, y, estimator):
     return torch.tensor(0)
 
 
-def save_generated_images(imgs, img_name, save_dir):
+def save_generated_images(generated_result, img_name, batch_idx, save_dir):
     """a list of images
     
     Args:
-        imgs (TYPE): a list of tensors, each of which representing an image
-        img_name (TYPE): Description
+        generated_result (TYPE): a list of tensors representing individual image,
+        and related source and target image names
+        img_name (TYPE): name template to create names for generated images
         save_dir (TYPE): Description
     """
-
-    n = len(imgs)
-    for i in range(n):
-        img = imgs[i]
-        torchvision.utils.save_image(img[0], 
-            os.path.join(save_dir, img_name.format("_".join(img[1]), i)))
+    images, xs_names, xt_names = generated_result
+    for img, xs, xt in zip(images, xs_names, xt_names):
+        torchvision.utils.save_image(img, os.path.join(
+                save_dir, img_name.format("_".join((xs,xt)), batch_idx)))
 
 
 def save_evaluation_results(stat, pth):
@@ -184,9 +181,11 @@ def save_evaluation_results(stat, pth):
 
 
 if __name__ == "__main__":
+    from src.common import utils
+    opt = EvalOptions(); opt = opt.get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
     try:
-        evaluate(logger)
-    except Exception() as e:
-        logger.error(e)
+        evaluate(opt, logger)
+    except Exception as e:
+        logger.error(str(e))
