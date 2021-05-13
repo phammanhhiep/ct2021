@@ -1,5 +1,7 @@
 log:
   save_dir: "log"
+  file_name: "evaluation"
+  level: 10 # INFO=20, DEBUG=10
 
 statistics: "experiments/stats/{}_three_stats.csv"
 
@@ -14,4 +16,6 @@ head_pose_estimator:
   name: "hopenet_robust_alpha1"
   load_dir: "experiments/head_pose_estimator"
 
-data: "datasets/ffhq/evaluation_data_list.dat"
+dataset: 
+  evaluation: "datasets/ffhq/evaluation_data_list.dat"
+  root_dir: "src/datasets/sample"

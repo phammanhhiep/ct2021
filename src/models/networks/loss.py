@@ -15,13 +15,13 @@ class AEINetLoss(nn.Module):
 
     def __init__(self, opt):
         super().__init__()
-        self.adv_criterion = MultiScaleGanLoss(opt["GANLoss"])
-        self.attr_criterion = AttrLoss(opt["AttrLoss"])
-        self.rec_criterion = RecLoss(opt["RecLoss"])
-        self.idt_criterion = IdtLoss(opt["IdtLoss"])
-        self.AttrLoss_w = opt["loss_weights"]["AttrLoss"]
-        self.RecLoss_w = opt["loss_weights"]["RecLoss"]
-        self.IdtLoss_w = opt["loss_weights"]["IdtLoss"]
+        self.adv_criterion = MultiScaleGanLoss()
+        self.attr_criterion = AttrLoss()
+        self.rec_criterion = RecLoss()
+        self.idt_criterion = IdtLoss()
+        self.AttrLoss_w = opt["weights"]["AttrLoss"]
+        self.RecLoss_w = opt["weights"]["RecLoss"]
+        self.IdtLoss_w = opt["weights"]["IdtLoss"]
 
 
     def forward(self, xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output, 
@@ -54,7 +54,7 @@ class AEINetLoss(nn.Module):
 
 
 class MultiScaleGanLoss(nn.Module):
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
 
 
@@ -107,7 +107,7 @@ class AttrLoss(nn.Module):
     image, obtained from the attribute decoder. 
     """
     
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
 
 
@@ -137,7 +137,7 @@ class RecLoss(nn.Module):
     image and the synthesis image.
     """
 
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
 
 
@@ -157,7 +157,7 @@ class RecLoss(nn.Module):
 
 
 class IdtLoss(nn.Module):
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
 
 

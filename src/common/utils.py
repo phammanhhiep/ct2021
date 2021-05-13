@@ -1,15 +1,25 @@
 from sys import stdout
+import os
 import logging
+from datetime import datetime
+
+import torch
 
 
-def create_root_logger(level=logging.INFO):
+def create_root_logger(level=logging.DEBUG, file_name=None):
     FORMAT = logging.Formatter(
         "%(asctime)s — %(name)s — %(levelname)s — %(message)s")
     logger = logging.getLogger()
-    handler = logging.StreamHandler(stdout)
+    if file_name is not None:
+        timestamp = datetime.today().strftime('%Y%m%d_%H%M%S')
+        handler = logging.FileHandler("log/{}_{}.log".format(file_name, timestamp))
+    else:
+        handler = logging.StreamHandler(stdout)
+    
     handler.setFormatter(FORMAT)
     logger.addHandler(handler)
     logger.setLevel(level)
+
     return logger
 
 
@@ -23,4 +33,4 @@ def save_net(net, label, save_dir):
 def load_net(net, label, load_dir):
     name = "{}.pth".format(label)
     load_path = os.path.join(load_dir, name)
-    net.load_state_dict(torch.load(load_path), map_location=torch.device("cpu"))
+    net.load_state_dict(torch.load(load_path, map_location="cpu"))

@@ -38,7 +38,8 @@ def evaluate(logger):
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["data"] 
+    data_list = opt["dataset"]["evaluation"]
+    data_root_dir = opt["dataset"]["root_dir"]
 
     date_str = datetime.today().strftime('%Y%m%d')
     img_name = date_str + "_{}_{}.png"
@@ -51,7 +52,7 @@ def evaluate(logger):
     result = []
     idt_dist = []
 
-    dataset = Dataset(data_list, return_name=True)
+    dataset = Dataset(data_root_dir, data_list, return_name=True)
     dataloader = data.DataLoader(dataset, batch_size=2, shuffle=True)
     generated_count = len(dataset) / 2
 
@@ -183,5 +184,9 @@ def save_evaluation_results(stat, pth):
 
 
 if __name__ == "__main__":
-    logger = create_root_logger(level=logging.DEBUG)
-    evaluate(logger)
+    logger = utils.create_root_logger(level=opt["log"]["level"], 
+        file_name=opt["log"]["file_name"])
+    try:
+        evaluate(logger)
+    except Exception() as e:
+        logger.error(e)

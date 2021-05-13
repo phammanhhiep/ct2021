@@ -11,33 +11,26 @@ class AttrEncoder(nn.Module):
     """A U-net-like network to extract attributes from the target image.
     """
 
-    def __init__(self, opt):
+    def __init__(self):
         """Summary
-        
-        Args:
-            opt (TYPE): Description
-            in_channels (int, optional): Image is fed directly to the network, 
-            and thus the in_channel is assumed to be 3
         """
         super().__init__()
-        in_channels = opt["in_channels"]
-        eopt = opt["encoder"]
-        dopt = opt["decoder"]
-        LeakyReLU_slope = opt["LeakyReLU_slope"]
+        in_channels = 3
+        LeakyReLU_slope = 0.2
 
-        encoder_out_channel_list = eopt["conv"]["out_channel_list"] 
-        conv_kernel_size = eopt["conv"]["kernel_size"]
-        conv_stride = eopt["conv"]["stride"]
-        conv_padding = eopt["conv"]["padding"]
+        encoder_out_channel_list = [32, 64, 128, 256, 512, 1024, 1024]
+        conv_kernel_size = 4
+        conv_stride = 2
+        conv_padding = 1
 
-        deccoder_in_channel_list = dopt["conv_tr"]["in_channel_list"]
-        decoder_out_channel_list = dopt["conv_tr"]["out_channel_list"]
-        conv_tr_kernel_size = dopt["conv_tr"]["kernel_size"]
-        conv_tr_stride = dopt["conv_tr"]["stride"]
-        conv_tr_padding = dopt["conv_tr"]["padding"]
+        deccoder_in_channel_list = [1024, 2048, 1024, 512, 256, 128]
+        decoder_out_channel_list = [1024, 512, 256, 128, 64, 32]
+        conv_tr_kernel_size = 4
+        conv_tr_stride = 2
+        conv_tr_padding = 1
 
-        self.ebn = eopt["num_blks"]
-        self.dbn = dopt["num_blks"]
+        self.ebn = 7
+        self.dbn = 6
         self.decoder_features = []
         self.encoder_features = []
         self.encoder = []
@@ -105,7 +98,7 @@ class AttrEncoder(nn.Module):
 class IdtEncoder(nn.Module):
 
     #TODO: Provide an option to choose different model from torchvision
-    def __init__(self, opt):
+    def __init__(self):
         """The encoder is assumed to be a pretrained model, and thus should not
         be optimzed with the rest of the model.
         
@@ -113,14 +106,10 @@ class IdtEncoder(nn.Module):
             opt (TYPE): Description
         """
         super().__init__()
-        self.model = torchvision.models.resnet101(
-            num_classes=opt["num_classes"])
-
-        if opt["pretrained_model"] is not None:
-            self.model.load_state_dict(torch.load(opt["pretrained_model"], 
-                map_location=opt["map_location"]))
+        pretrained_model = "experiments/idt_encoder/ArcFace.pth"
+        self.model = torchvision.models.resnet101(num_classes=256)
         self.model.requires_grad_(False)
-
+        
 
     #TOD0: consider to downsample the input as in https://github.com/phammanhhiep/unoffical-faceshifter
     #TODO: consider to use the last layer before the FC layer is used as identity features, as described in the original paper FaceShifter 
@@ -134,3 +123,7 @@ class IdtEncoder(nn.Module):
         """
         h = self.model(x)
         return h.unsqueeze(-1).unsqueeze(-1)
+
+
+    def load(self, pth):
+        self.model.load_state_dict(torch.load(pth, map_location="cpu"))

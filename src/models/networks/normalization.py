@@ -3,7 +3,7 @@ from torch import nn
 
 
 class AADNorm(nn.Module):
-    def __init__(self, in_channels, attr_channels, idt_channels, opt):
+    def __init__(self, in_channels, attr_channels, idt_channels):
         """
         Every convolution layers are expected to not change spatial dimention of 
         the corresponding input. 
@@ -12,7 +12,8 @@ class AADNorm(nn.Module):
             in_channels (int): number of channels of the activation input from
             previous layer
             attr_channels (TYPE): Description
-            opt (TYPE): Description
+            idt_channels (TYPE): Description
+            
         """
         super().__init__()
         conv_kernel_size = 3

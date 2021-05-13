@@ -10,11 +10,11 @@ class AEINet(nn.Module):
 
     """Combine AADGenerator, Attribute Encoder, and Identity Encoder together.
     """
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
-        self.attr_encoder = AttrEncoder(opt["AttrEncoder"])
-        self.idt_encoder = IdtEncoder(opt["ArcFace"])
-        self.generator = AADGenerator(opt["AADGenerator"])
+        self.attr_encoder = AttrEncoder()
+        self.idt_encoder = IdtEncoder()
+        self.generator = AADGenerator()
 
 
     def forward(self, xs, xt):
@@ -40,26 +40,29 @@ class AEINet(nn.Module):
         return self.attr_encoder
 
 
+    def load_pretrained_idt_encoder(self, pth):
+        self.idt_encoder.load(pth)
+
+
 class AADGenerator(nn.Module):
 
     """The implementaion is based on the ADD generator discussed in "FaceShifter:
     Towards High Fidelity And Occlusion Aware Face Swapping (Li et al)".
     """
-    def __init__(self, opt):
+    def __init__(self):
         """Summary
         
         Args:
             attr_channel_list (TYPE): Description
-            opt (TYPE): Description
         """
         super().__init__()
         self.model = []
-        self.upsample_scale = opt["upsample_scale"]
-        self.num_AADResBlk = opt["num_AADResBlk"]
-        attr_channel_list = opt["attr_channel_list"]
-        AADResBlk_out_channel_list = opt["AADResBlk_out_channel_list"]
-        idt_channels = opt["idt_channels"]
-        conv_tr_out_channels = opt["conv_tr"]["out_channels"]
+        self.upsample_scale = 2.0
+        self.num_AADResBlk = 8
+        attr_channel_list = [1024, 2048, 1024, 512, 256, 128, 64, 64]
+        AADResBlk_out_channel_list = [1024, 1024, 1024, 512, 256, 128, 64, 3]
+        idt_channels = 256
+        conv_tr_out_channels = 1024
         conv_tr_kernel_size = 2
         conv_tr_stride = 1
         conv_tr_padding = 0
@@ -77,8 +80,7 @@ class AADGenerator(nn.Module):
             attr_channels = attr_channel_list[n]
             out_channels = AADResBlk_out_channel_list[n]
             self.model.append(AADResBlk(
-                in_channels, attr_channels, idt_channels, out_channels, 
-                opt["AADResBlk"]))
+                in_channels, attr_channels, idt_channels, out_channels))
             in_channels = out_channels
 
 

@@ -8,10 +8,10 @@ from src.common import utils
 
 
 class FaceShifterModel(nn.Module):
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
-        self.create_g(opt["AEINet"])
-        self.create_d(opt["MultiScaleDiscriminator"])
+        self.create_g()
+        self.create_d()
 
 
     #TODO: consider if the unbalanced data fed to discriminator affects its performance
@@ -50,13 +50,13 @@ class FaceShifterModel(nn.Module):
         return h
 
 
-    def create_g(self, opt):
-        self.g = AEINet(opt)
+    def create_g(self):
+        self.g = AEINet()
         self.g_checkpoint_name = "{}_g" # e.g. modelid_g
     
 
-    def create_d(self, opt):
-        self.d = MultiScaleDiscriminator(opt)
+    def create_d(self):
+        self.d = MultiScaleDiscriminator()
         self.d_checkpoint_name = "{}_d" # e.g. modelid_d
 
 
@@ -68,7 +68,6 @@ class FaceShifterModel(nn.Module):
         return list(self.d.parameters())
 
 
-    #TODO: review the output
     def get_face_identity(self, x):
         idt_encoder = self.g.get_idt_encoder()
         return idt_encoder(x)
@@ -93,7 +92,7 @@ class FaceShifterModel(nn.Module):
             save_dir)
 
 
-    def load(self, model_id, load_dir):
+    def load(self, model_id, load_dir, load_d=True):
         """Summary
         
         Args:
@@ -102,5 +101,10 @@ class FaceShifterModel(nn.Module):
         """
         utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
             load_dir)
-        utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
-            load_dir)
+        if load_d:
+            utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
+                load_dir)
+
+
+    def load_pretrained_idt_encoder(self, pth):
+        self.g.load_pretrained_idt_encoder(pth)

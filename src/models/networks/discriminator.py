@@ -8,15 +8,15 @@ class MultiScaleDiscriminator(nn.Module):
     Conditional GANs (Wang et al) (NVIDIA)"
     """
 
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
-        self.num_ds = opt["num_ds"]
-        self.scale = opt["downsample_scale_factor"]
+        self.num_ds = 3
+        self.scale = 0.5
         self.model = nn.ModuleList()
 
         for n in range(self.num_ds):
             self.model.append(
-                PatchGANDiscriminator(opt["PatchGANDiscriminator"]))
+                PatchGANDiscriminator())
 
 
     def forward(self, x):
@@ -51,15 +51,15 @@ class PatchGANDiscriminator(nn.Module):
     """
 
     #TODO: verify if spectral norm is used at the same time with instance norm, or instance norm is replaced by spectral norm
-    def __init__(self, opt):
+    def __init__(self):
         super().__init__()
-        num_conv_blks = opt["num_conv_blks"]
-        in_channels = opt["in_channels"]
-        out_channels_list = opt["conv"]["out_channel_list"]
-        conv_kernel_size = opt["conv"]["kernel_size"]
-        conv_stride = opt["conv"]["stride"]
-        conv_padding = opt["conv"]["padding"]
-        LeakyReLU_slope = opt["LeakyReLU_slope"]
+        num_conv_blks = 6
+        in_channels = 3
+        out_channels_list = [64, 128, 256, 512, 512, 512]
+        conv_kernel_size = 4
+        conv_stride = 2
+        conv_padding = 2
+        LeakyReLU_slope = 0.2
         self.model = []
 
         for n in range(num_conv_blks):

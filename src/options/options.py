@@ -12,8 +12,8 @@ class TrainOptions:
         self.parser.add_argument('--option_file', type=str, 
             help="Relative path to the option file")
         self.parser.add_argument('--experiment', type=str, 
-            help="Name of experiment; default name include 2 parts, YYMMDD and \
-            experiment count", 
+            help="Name of the experiment; default name include 2 parts, YYMMDD \
+            and experiment count", 
             default=datetime.today().strftime("%Y%m%d") + "_0")
         
         args = self.gather_arguments()
@@ -34,3 +34,14 @@ class TrainOptions:
 
     def get_opt(self):
         return self.opt
+
+
+class EvalOptions(TrainOptions):
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser.add_argument('--option_file', type=str, 
+            help="Relative path to the option file")
+        
+        args = self.gather_arguments()
+        self.opt = self.gather_opt(args.option_file)

@@ -11,18 +11,25 @@ from torchvision import transforms as T
 
 
 class Dataset(data.Dataset):
-    def __init__(self, data_list, transforms=None):
+    def __init__(self, root_dir, data_list, transforms=None, return_name=False):
         """Each instance represent a dataset.   
         
         Args:
-            data_lists (TYPE): path to the file that contains a list of file in
-            the dataset
-            transform (TYPE): a composite of transformations that are applied to
-            every data point in the dataset
+            root_dir (TYPE): Description
+            data_list (TYPE): the file that contains a list of file in the dataset
+            transforms (None, optional): a (pytorch) composite of transformations
+            return_name (bool, optional): whether to return file name together
+            with the corresponding data point
         """
+        self.return_name = return_name
+        self.root_dir = root_dir
+
         with open(data_list, "r") as fd:
-            self.data_paths = fd.readlines()
-        self.data_paths = np.random.permutation(self.data_paths)
+            self.data_names = fd.readlines()
+
+        self.data_names = [p.replace("\n", "") for p in self.data_names]
+        self.data_names = np.random.permutation(self.data_names)
+
         if transforms is None:
             self.transforms = T.Compose([
                 T.Resize((256, 256)),
@@ -31,7 +38,7 @@ class Dataset(data.Dataset):
 
 
     def __len__(self):
-        return len(self.data_paths)
+        return len(self.data_names)
 
 
     def __getitem__(self, index):
@@ -43,7 +50,9 @@ class Dataset(data.Dataset):
         Returns:
             TYPE: Description
         """
-        sample_path = self.data_paths[index]
-        sample = Image.open(sample_path.replace("\n", ""))
+        sample_name = self.data_names[index]
+        sample = Image.open(os.path.join(self.root_dir, sample_name))
         sample = self.transforms(sample)
+        if self.return_name:
+            sample = [sample, os.path.basename(sample_name).split(".")[0]]
         return sample

@@ -5,8 +5,7 @@ from src.models.networks.normalization import AADNorm
 
 
 class AADResBlk(nn.Module):
-    def __init__(self, in_channels, attr_channels, idt_channels, out_channels, 
-        opt):
+    def __init__(self, in_channels, attr_channels, idt_channels, out_channels):
         """The block takes into account when input and output channels 
         are different. The output, previous activation (input), and attributes 
         are supposed to have the same spatial dimensions.
@@ -16,7 +15,6 @@ class AADResBlk(nn.Module):
             attr_channels (TYPE): Description
             idt_channels (TYPE): Description
             out_channels (TYPE): Description
-            opt (TYPE): Description
         """
         super().__init__()
         self.model = []
@@ -26,13 +24,13 @@ class AADResBlk(nn.Module):
         conv_padding = 1
 
         self.model.append(nn.Sequential(
-            AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
+            AADNorm(in_channels, attr_channels, idt_channels),
             nn.ReLU(),
             nn.Conv2d(in_channels, in_channels, conv_kernel_size, conv_stride,
                 conv_padding)
             ))
         self.model.append(nn.Sequential(
-            AADNorm(in_channels, attr_channels, idt_channels, opt["AADNorm"]),
+            AADNorm(in_channels, attr_channels, idt_channels),
             nn.ReLU(),
             nn.Conv2d(in_channels, out_channels, conv_kernel_size, conv_stride,
                 conv_padding)
@@ -40,8 +38,7 @@ class AADResBlk(nn.Module):
 
         if self.diff_in_out_channels:
             self.input_transform = nn.Sequential(
-                AADNorm(in_channels, attr_channels, idt_channels, 
-                    opt["AADNorm"]),
+                AADNorm(in_channels, attr_channels, idt_channels),
                 nn.ReLU(),
                 nn.Conv2d(in_channels, out_channels, conv_kernel_size, 
                     conv_stride, conv_padding)

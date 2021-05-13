@@ -2,91 +2,45 @@ dataset:
   train: "FFHQ"
   validation: "FFHQ"
   num_worker: 1
-  batch_size: 50
+  batch_size: 4 # supposed to be an even number
 
-FFHG:
-  train: "data/ffhg/train_data_list"
-  validation: "data/ffhg/validation_data_list"
+FFHQ:
+  train: "datasets/ffhq/train_data_list.dat"
+  validation: "datasets/ffhq/validation_data_list.dat"
+  root_dir: "datasets/sample"
 CelebAHQ:
-  train: "data/celebahq/train_data_list"
-  validation: "data/celebahq/validation_data_list"
-
-FaceShifterTrainer:
-  max_epochs: 1000
-  continue:
-    status: False
-    epoch: 0
-  d_step_per_g: 2 # number of training times of discriminator per that of generator
-  optim:
-    name: "Adam"
-    lr: 1e-3
-    betas: [0.1, 0.2]
-
-AEINet:
-  AttrEncoder:
-    in_channels: 3
-    LeakyReLU_slope: 0.2
-    encoder:
-      num_blks: 7
-      conv:
-        out_channel_list: [32, 64, 128, 256, 512, 1024, 1024]
-        kernel_size: 4
-        stride: 2
-        padding: 1
-    decoder:
-      num_blks: 6
-      conv_tr:
-        in_channel_list: [1024, 2048, 1024, 512, 256, 128]
-        out_channel_list: [1024, 512, 256, 128, 64, 32]
-        kernel_size: 4
-        stride: 2
-        padding: 1
-
-  AADGenerator:
-    num_AADResBlk: 8
-    AADResBlk_out_channel_list: [1024, 1024, 1024, 512, 256, 128, 64, 3]
-    attr_channel_list: [2048, 1024, 512, 256, 128, 64, 64]
-    idt_channels: 256 # the number of features of the idenity which is assumed to be 1D vector
-    conv_tr:
-      out_channels: 1024
-    upsample_scale: 2.0
-    AADResBlk:
-      ADDNorm: null
-
-ArcFace:
-  num_classes: null
-  pretrained_model: "experiments/idt_encoder/Arcface.pth"
-  map_location: "cpu" 
-
-MultiScaleDiscriminator:
-  num_ds: 3
-  downsample_scale_factor: 0.5
-  PatchGANDiscriminator:
-    LeakyReLU_slope: 0.2
-    num_conv_blks: 6
-    in_channels: 3
-    conv:
-      out_channel_list: [64, 128, 256, 512, 512, 512]
-      kernel_size: 4
-      stride: 2
-      padding: 2
-
-AEINetLoss:
-  loss_weights:
-    AttrLoss: 10
-    RecLoss: 10
-    IdtLoss: 5
-
-GANLoss: null
-
-AttrLoss: null
-
-RecLoss: null
-
-IdtLoss: null
+  train: "datasets/celebahq/train_data_list.dat"
+  validation: "datasets/celebahq/validation_data_list.dat"
+  root_dir: "datasets/sample"
 
 checkpoint:
-  save_dir: "checkpoint"
+  save_dir: "checkpoint/"
+  continue: 
+    status: True
+    name: "20210513_6" # checkpoint name, i.e. YYMMDD_epoch
 
 log:
   save_dir: "log"
+  file_name: "train"
+  level: 10 # INFO=20, DEBUG=10
+
+trainer:
+  name: "FaceShifterTrainer"
+
+FaceShifterTrainer:
+  max_epochs: 10000
+  d_step_per_g: 2 # number of training times of discriminator per that of generator
+  optim:
+    name: "Adam"
+    lr: 0.0004
+    betas: [0.0, 0.999]
+
+IdtEncoder:
+  name: "ArcFace"
+  pretrained_model: "experiments/idt_encoder/ArcFace.pth"
+
+AEINetLoss:
+  weights:
+    AttrLoss: 10
+    RecLoss: 10
+    IdtLoss: 5

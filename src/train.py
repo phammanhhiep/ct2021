@@ -4,7 +4,7 @@ import logging
 from torch.utils import data
 
 
-from src.options.options import Options
+from src.options.options import TrainOptions
 from src.trainers.faceShifter_trainer import FaceShifterTrainer
 from src.data.dataset import Dataset
 
@@ -13,12 +13,12 @@ from src.data.dataset import Dataset
 #TODO: remove the need to hard-code using if-else statement and specify datasets and trainers. Review SPADE project a hint. 
 #TODO: Consider using trainer from pytorch_lightning
 #TODO: Provide option to save model within each epoch
-def train():
-    opt = Options()
+def train(opt):
     trainer_name = opt["trainer"]["name"]
     dataset_name = opt["dataset"]["train"]
     
-    train_dataset = Dataset(opt[dataset_name]["train"])
+    train_dataset = Dataset(opt[dataset_name]["root_dir"], 
+        opt[dataset_name]["train"])
     
     dataloader = data.DataLoader(
         train_dataset, 
@@ -27,12 +27,18 @@ def train():
         num_workers=opt["dataset"]["num_worker"],
         )
 
-    if trainer_name == "FaceShifterTrainer"
+    if trainer_name == "FaceShifterTrainer":
         trainer = FaceShifterTrainer(opt)
 
     trainer.fit(dataloader)
 
 
 if __name__ == "__main__":
-    create_root_logger()
-    train()
+    from src.common import utils
+    opt = TrainOptions(); opt = opt.get_opt()
+    logger = utils.create_root_logger(level=opt["log"]["level"], 
+        file_name=opt["log"]["file_name"])
+    try:
+        train(opt)
+    except Exception as e:
+        logger.error(e)
