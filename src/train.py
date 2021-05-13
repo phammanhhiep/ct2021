@@ -13,7 +13,7 @@ from src.data.dataset import Dataset
 #TODO: remove the need to hard-code using if-else statement and specify datasets and trainers. Review SPADE project a hint. 
 #TODO: Consider using trainer from pytorch_lightning
 #TODO: Provide option to save model within each epoch
-def train(opt):
+def train(opt, logger):
     trainer_name = opt["trainer"]["name"]
     dataset_name = opt["dataset"]["train"]
     
@@ -39,6 +39,6 @@ if __name__ == "__main__":
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
     try:
-        train(opt)
+        train(opt, logger)
     except Exception as e:
-        logger.error(e)
+        logger.error(str(e))
