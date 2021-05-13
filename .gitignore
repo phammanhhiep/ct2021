@@ -138,3 +138,6 @@ log/
 # Model training & experiments
 checkpoint/
 experiments/
+
+# options
+*_options.yaml
