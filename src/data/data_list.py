@@ -20,7 +20,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--root_dir", type=str, 
-        help="Root directory of the data")
+        help="Root directory of the data", default=None)
+    parser.add_argument("--data_names", type=str, 
+        help="Path to available file names", default=None)
     parser.add_argument("--file_name", type=str, 
         help="Save data list to the file")
     parser.add_argument("--distinct_pairs", type=int, 
@@ -30,7 +32,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    datanames = os.listdir(args.root_dir)
+    if args.root_dir is not None:
+        datanames = os.listdir(args.root_dir)
+    elif args.data_names is not None:
+        with open(args.data_names. "r") as fd:
+            datanames = fd.read().splitlines()
+
     data_list = create_data_list(datanames, args.distinct_pairs, args.same_files)
     with open(args.file_name, "w", newline="") as fd:
         writer = csv.writer(fd, delimiter=",")
