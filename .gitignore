@@ -135,5 +135,6 @@ datasets/
 # log
 log/
 
-# Model training
+# Model training & experiments
 checkpoint/
+experiments/
