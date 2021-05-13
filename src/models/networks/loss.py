@@ -25,7 +25,7 @@ class AEINetLoss(nn.Module):
 
 
     def forward(self, xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output, 
-        reconstructed=False):
+        reconstructed):
         """Summary
         
         Args:
@@ -39,15 +39,15 @@ class AEINetLoss(nn.Module):
             y_idt (TYPE): a batch of identities of the generated images
             d_output (TYPE): multi-scale discriminator outputs which is a list of 
             4D tensors; the size of ech component of y is (B, 1, H, W)
-            reconstructed (bool, optional): whether source and target images are
-            the same
+            reconstructed (TYPE): indicate whether source and target images are
+            the same; its size is (B,1,1,1)
         
         Returns:
             TYPE: Description
         """
         adv_loss = self.adv_criterion(d_output, label=False, compute_d_loss=False)
         attr_loss = self.attr_criterion(xt_attr, y_attr)
-        rec_loss = self.rec_criterion(xt, y, reconstructed=reconstructed)
+        rec_loss = self.rec_criterion(xt, y, reconstructed)
         idt_loss = self.idt_criterion(xs_idt, y_idt)
         return adv_loss + attr_loss * self.AttrLoss_w + \
             rec_loss * self.RecLoss_w + idt_loss * self.IdtLoss_w
@@ -141,19 +141,21 @@ class RecLoss(nn.Module):
         super().__init__()
 
 
-    def forward(self, x, y, reconstructed=False):
+    def forward(self, x, y, reconstructed):
         """Summary
         
         Args:
             x (TYPE): a batch of target (or source) image
             y (TYPE): a batch of corresponding sythesized image
-            reconstructed (bool, optional): whether same source and target image
+            reconstructed (tensor): indicate whether source and target images are
+            the same; its size is (B,1,1,1)
         
         Returns:
             float: Description
         """
-        return 0 if not reconstructed else \
-            0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
+        x = x * reconstructed
+        y = y * reconstructed
+        return 0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
 
 
 class IdtLoss(nn.Module):
