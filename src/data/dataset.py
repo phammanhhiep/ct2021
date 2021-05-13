@@ -66,5 +66,5 @@ class Dataset(data.Dataset):
                 tn = sn
             else:
                 tn = os.path.basename(target_name).split(".")[0]
-            sample.append([sn, tn])
+            sample += [sn, tn]
         return sample
