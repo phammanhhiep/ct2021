@@ -140,4 +140,5 @@ checkpoint/
 experiments/
 
 # options
-*_options.yaml
+train_options.yaml
+eval_options.yaml
