@@ -106,7 +106,6 @@ class IdtEncoder(nn.Module):
             opt (TYPE): Description
         """
         super().__init__()
-        pretrained_model = "experiments/idt_encoder/ArcFace.pth"
         self.model = torchvision.models.resnet101(num_classes=256)
         self.model.requires_grad_(False)
         
