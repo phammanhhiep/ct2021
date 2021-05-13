@@ -57,7 +57,7 @@ def evaluate(opt, logger):
     generated_count = len(dataset)
 
     for j, batch_data in enumerate(dataloader):
-        logger.debug("Generate batch of images: #{}".format(j))
+        logger.info("Generate batch of images: #{}".format(j))
         xs, xt, reconstructed, xs_names, xt_names = batch_data
         x_hat = model(xs, xt)
         
@@ -66,7 +66,7 @@ def evaluate(opt, logger):
         fe_measure += facial_expression_error(xt, x_hat, 
             facial_expression_estimator)
 
-        logger.debug("Save {} generated images".format(x_hat.size()[0]))
+        logger.info("Save {} generated images".format(x_hat.size()[0]))
         save_generated_images((x_hat, xs_names, xt_names), img_name, j,
             opt["generated_image"]["save_dir"])
 
@@ -75,7 +75,7 @@ def evaluate(opt, logger):
     fe_measure = fe_measure / generated_count
 
 
-    logger.debug("Save stat results")
+    logger.info("Save stat results")
     save_evaluation_results(
         (idt_measure, hp_measure.item(), fe_measure.item()), stat_pth)
 

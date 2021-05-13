@@ -50,18 +50,18 @@ class FaceShifterTrainer:
 
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
-                logger.debug("Fetch batch: epoch {} - batch {}".format(epoch, bi))
+                logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     self.fit_g(xs, xt, reconstructed)
-                    logger.debug("Fit g: epoch {} - batch {}".format(epoch, bi))
+                    logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
                 
                 self.fit_d(xs, xt)
-                logger.debug("Fit d: epoch {} - batch {}".format(epoch, bi))
+                logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
             
             self.save_checkpoint(epoch, save_dir)
-            logger.debug("Save checkpoint: epoch {} - batch {}".format(epoch, bi))
+            logger.info("Save checkpoint: epoch {} - batch {}".format(epoch, bi))
             self.update_optimizer(epoch)
 
 
