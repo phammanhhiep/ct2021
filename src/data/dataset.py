@@ -2,6 +2,7 @@ import os
 import random
 import logging
 from PIL import Image
+import csv
 
 
 import numpy as np
@@ -24,10 +25,10 @@ class Dataset(data.Dataset):
         self.return_name = return_name
         self.root_dir = root_dir
 
-        with open(data_list, "r") as fd:
-            self.data_names = fd.readlines()
+        with open(data_list, newline="") as fd:
+            reader = csv.reader(fd, delimiter=",")
+            self.data_names = list(reader)
 
-        self.data_names = [p.replace("\n", "") for p in self.data_names]
         self.data_names = np.random.permutation(self.data_names)
 
         if transforms is None:
@@ -42,17 +43,28 @@ class Dataset(data.Dataset):
 
 
     def __getitem__(self, index):
-        """Return data from a sampled file
+        """Return a data point from a sampled file
         
         Args:
             index (TYPE): Description
         
         Returns:
-            TYPE: Description
+            list: [source, target, reconstructed, [source name, target name]]
         """
-        sample_name = self.data_names[index]
-        sample = Image.open(os.path.join(self.root_dir, sample_name))
-        sample = self.transforms(sample)
+        source_name, target_name, reconstructed = self.data_names[index]
+        reconstructed = torch.tensor([[[int(reconstructed)]]])
+        sample_source = Image.open(os.path.join(self.root_dir, source_name))
+        sample_target = Image.open(os.path.join(self.root_dir, target_name))
+        sample_source = self.transforms(sample_source)
+        sample_target = self.transforms(sample_target)
+
+        sample = [sample_source, sample_target, reconstructed]
+
         if self.return_name:
-            sample = [sample, os.path.basename(sample_name).split(".")[0]]
+            sn = os.path.basename(source_name).split(".")[0]
+            if reconstructed[0][0][0] == 1:
+                tn = sn
+            else:
+                tn = os.path.basename(target_name).split(".")[0]
+            sample.append([sn, tn])
         return sample
