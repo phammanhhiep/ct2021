@@ -2,7 +2,7 @@ dataset:
   train: "Sample"
   validation: "Sample"
   num_worker: 4
-  batch_size: 4 # supposed to be an even number
+  batch_size: 16 # supposed to be an even number
 
 Sample:
   train: "datasets/sample/train_data_list.csv"
