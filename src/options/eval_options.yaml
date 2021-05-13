@@ -18,4 +18,4 @@ head_pose_estimator:
 
 dataset: 
   evaluation: "datasets/ffhq/evaluation_data_list.dat"
-  root_dir: "src/datasets/sample"
+  root_dir: "datasets/sample"
