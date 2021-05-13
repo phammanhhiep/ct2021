@@ -40,8 +40,9 @@ class TestRecLoss:
     def test_forward_out_size(self):
         criteron = RecLoss()
         x = torch.rand((1,3,128,128))
-
-        loss = criteron(x, x, reconstructed=True)
+        y = torch.rand((1,3,128,128))
+        reconstructed = torch.tensor([[[[1]]]])
+        loss = criteron(x, x, reconstructed)
         assert len(loss.size()) == 0
 
 
@@ -74,8 +75,8 @@ class TestAEINetLoss:
         xs_idt = torch.rand((1,256,1,1))
         y_idt = torch.rand((1,256,1,1))
         d_output = [torch.rand((1,1,3,3)) for i in  range(3)]
-
+        reconstructed = torch.tensor([[[[1]]]])
         loss = criteron(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output, 
-            reconstructed=False)
+            reconstructed)
 
         assert len(loss.size()) == 0

@@ -9,12 +9,14 @@ class TestFaceShifterTrainer:
     @pytest.fixture
     def opt(self):
         return {
-            "FaceShifterTrainer":{
-                "max_epochs": 1,
+            "checkpoint":{
                 "continue":{
                     "status": False,
-                    "epoch": 0,
+                    "name": 0,
                 },
+            }, 
+            "FaceShifterTrainer":{
+                "max_epochs": 1,
                 "d_step_per_g": 1,
                 "optim":{
                     "name": "Adam",
@@ -56,8 +58,9 @@ class TestFaceShifterTrainer:
         trainer = FaceShifterTrainer(opt)
         xs = torch.rand((1,3,256,256))
         xt = torch.rand((1,3,256,256))
+        reconstructed = torch.tensor([[[[1]]]])
 
-        trainer.fit_g(xs, xt)
+        trainer.fit_g(xs, xt, reconstructed)
 
 
     # @pytest.mark.skip
