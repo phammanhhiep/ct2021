@@ -21,7 +21,7 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def preprocess(in_dir, out_dir=None, out_size=256):
+def preprocess(pretrained_face_landmark_model, in_dir, out_dir=None, out_size=256):
     """If out_dir contains a file with the same name as the output name, the
     input image is not processed.
     
@@ -32,7 +32,6 @@ def preprocess(in_dir, out_dir=None, out_size=256):
     """
     transform_size=4096
     enable_padding=True
-    pretrained_face_landmark_model = "src/data/transform/shape_predictor_68_face_landmarks.dat"
     detector = dlib.get_frontal_face_detector()
     sp = dlib.shape_predictor(pretrained_face_landmark_model)
 
@@ -146,6 +145,7 @@ def preprocess(in_dir, out_dir=None, out_size=256):
         preprocessed_col.append(img)
     return preprocessed_col
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--in_dir", type=str, required=True)
@@ -155,5 +155,5 @@ if __name__ == "__main__":
     parser.add_argument("--out_size", type=int, default=256)
     args = parser.parse_args()
 
-
-    preprocess(args.in_dir, args.out_dir, args.out_size)
+    pretrained_face_landmark_model =  "experiments/preprocess/shape_predictor_68_face_landmarks.dat"
+    preprocess(pretrained_face_landmark_model, args.in_dir, args.out_dir, args.out_size)
