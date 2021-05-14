@@ -54,14 +54,17 @@ class FaceShifterTrainer:
                 xs, xt, reconstructed = batch_data
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
-                    self.fit_g(xs, xt, reconstructed)
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
-                
-                self.fit_d(xs, xt)
+                    self.fit_g(xs, xt, reconstructed)
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
-            
-            self.save_checkpoint(epoch, save_dir)
-            logger.info("Save checkpoint: epoch {} - batch {}".format(epoch, bi))
+                self.fit_d(xs, xt)
+                if bi % self.opt["checkpoint"]["save_interval"]:
+                    logger.info(
+                        "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
+                    self.save_checkpoint(epoch, save_dir)
+
+            logger.info("Save checkpoint: epoch {}".format(epoch))
+            self.save_checkpoint(epoch, save_dir)                
             self.update_optimizer(epoch)
 
 
@@ -84,6 +87,9 @@ class FaceShifterTrainer:
 
         loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,
             reconstructed)
+
+        logger.info("G loss: {}".format(loss.item()))
+
         self.g_optimizer.zero_grad()
         loss.backward()
         self.g_optimizer.step()
@@ -102,6 +108,9 @@ class FaceShifterTrainer:
         real_loss = self.d_criterion(real_pred, True)
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
+
+        logger.info("D loss: {}".format(loss.item()))
+
         self.d_optimizer.zero_grad()
         loss.backward()
         self.d_optimizer.step()     
