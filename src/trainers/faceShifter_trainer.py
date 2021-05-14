@@ -58,7 +58,7 @@ class FaceShifterTrainer:
                     self.fit_g(xs, xt, reconstructed)
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
                 self.fit_d(xs, xt)
-                if bi % self.opt["checkpoint"]["save_interval"]:
+                if bi % self.opt["checkpoint"]["save_interval"] == 0:
                     logger.info(
                         "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
                     self.save_checkpoint(epoch, save_dir)
