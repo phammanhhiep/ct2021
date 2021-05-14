@@ -59,12 +59,13 @@ def evaluate(opt, logger):
     for j, batch_data in enumerate(dataloader):
         logger.info("Generate batch of images: #{}".format(j))
         xs, xt, reconstructed, xs_names, xt_names = batch_data
-        x_hat = model(xs, xt)
         
-        idt_retrieval(xs, xt, x_hat, model, idt_dist)
-        hp_measure += head_pose_error(xt, x_hat, hp_estimator)
-        fe_measure += facial_expression_error(xt, x_hat, 
-            facial_expression_estimator)
+        with torch.no_grad():
+            x_hat = model(xs, xt)
+            idt_retrieval(xs, xt, x_hat, model, idt_dist)
+            hp_measure += head_pose_error(xt, x_hat, hp_estimator)
+            fe_measure += facial_expression_error(xt, x_hat, 
+                facial_expression_estimator)
 
         logger.info("Save {} generated images".format(x_hat.size()[0]))
         save_generated_images((x_hat, xs_names, xt_names), img_name, j,
