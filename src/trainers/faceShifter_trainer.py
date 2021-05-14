@@ -61,7 +61,7 @@ class FaceShifterTrainer:
                 if bi % self.opt["checkpoint"]["save_interval"] == 0:
                     logger.info(
                         "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
-                    self.save_checkpoint(epoch, save_dir)
+                    self.save_checkpoint("{}_{}".format(epoch, bi), save_dir)
 
             logger.info("Save checkpoint: epoch {}".format(epoch))
             self.save_checkpoint(epoch, save_dir)                
@@ -133,14 +133,17 @@ class FaceShifterTrainer:
 
 
     def set_last_epoch(self):
-        """Take into account the case in which a model is continued to be 
-        trained. last_epoch should be positive only if in the case.
+        """Take into account the case in which a model is save in the middle of
+        an epoch, and thus bach_id is included.
         
         Returns:
             TYPE: Description
         """
-        self.last_epoch = int(
-            self.opt["checkpoint"]["continue"]["name"].split("_")[1]) + 1
+        epoch = self.opt["checkpoint"]["continue"]["name"].split("_")[1:]
+        if len(epoch) > 1:
+            self.last_epoch = int(epoch[0])
+        else:
+            self.last_epoch = int(epoch[0]) + 1
 
 
     def update_optimizer(self, epoch):
