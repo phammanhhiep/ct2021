@@ -39,9 +39,7 @@ if __name__ == "__main__":
     opt = TrainOptions(); opt = opt.get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
-    torch.backends.cudnn.enabled = False
-    # try:
-    #     train(opt, logger)
-    # except Exception as e:
-    #     logger.error(str(e))
-    train(opt, logger)
+    try:
+        train(opt, logger)
+    except Exception as e:
+        logger.error(str(e))
