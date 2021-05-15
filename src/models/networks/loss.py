@@ -49,6 +49,10 @@ class AEINetLoss(nn.Module):
         attr_loss = self.attr_criterion(xt_attr, y_attr)
         rec_loss = self.rec_criterion(xt, y, reconstructed)
         idt_loss = self.idt_criterion(xs_idt, y_idt)
+
+        logger.info("g loss: adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}".format(
+            adv_loss, attr_loss, rec_loss, idt_loss))
+
         return adv_loss + attr_loss * self.AttrLoss_w + \
             rec_loss * self.RecLoss_w + idt_loss * self.IdtLoss_w
 
