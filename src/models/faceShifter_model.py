@@ -38,7 +38,9 @@ class FaceShifterModel(nn.Module):
         if mode == 1:
             h = self.g(xs, xt)
         elif mode == 2:
-            x_hat = self.g(xs, xt)
+            with torch.no_grad():
+                x_hat = self.g(xs, xt)
+                x_hat.requires_grad_()
             x = torch.cat((xs, xt))
             h1 = self.d(x)
             h2 = self.d(x_hat)
