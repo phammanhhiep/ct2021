@@ -92,7 +92,7 @@ class FaceShifterModel(nn.Module):
             save_dir)
 
 
-    def load(self, model_id, load_dir, load_d=True):
+    def load(self, model_id, load_dir, device="cpu", load_d=True):
         """Summary
         
         Args:
@@ -100,11 +100,11 @@ class FaceShifterModel(nn.Module):
             load_dir (TYPE): Description
         """
         utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
-            load_dir)
+            load_dir, device)
         if load_d:
             utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
-                load_dir)
+                load_dir, device)
 
 
-    def load_pretrained_idt_encoder(self, pth):
-        self.g.load_pretrained_idt_encoder(pth)
+    def load_pretrained_idt_encoder(self, pth, device):
+        self.g.load_pretrained_idt_encoder(pth, device)

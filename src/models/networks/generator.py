@@ -40,8 +40,8 @@ class AEINet(nn.Module):
         return self.attr_encoder
 
 
-    def load_pretrained_idt_encoder(self, pth):
-        self.idt_encoder.load(pth)
+    def load_pretrained_idt_encoder(self, pth, device):
+        self.idt_encoder.load(pth, device)
 
 
 class AADGenerator(nn.Module):
@@ -56,7 +56,7 @@ class AADGenerator(nn.Module):
             attr_channel_list (TYPE): Description
         """
         super().__init__()
-        self.model = []
+        self.model = nn.ModuleList()
         self.upsample_scale = 2.0
         self.num_AADResBlk = 8
         attr_channel_list = [1024, 2048, 1024, 512, 256, 128, 64, 64]

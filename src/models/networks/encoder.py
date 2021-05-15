@@ -33,8 +33,8 @@ class AttrEncoder(nn.Module):
         self.dbn = 6
         self.decoder_features = []
         self.encoder_features = []
-        self.encoder = []
-        self.decoder = []
+        self.encoder = nn.ModuleList()
+        self.decoder = nn.ModuleList()
 
 
         for n in range(self.ebn):
@@ -124,5 +124,5 @@ class IdtEncoder(nn.Module):
         return h.unsqueeze(-1).unsqueeze(-1)
 
 
-    def load(self, pth):
-        self.model.load_state_dict(torch.load(pth, map_location="cpu"))
+    def load(self, pth, device="cpu"):
+        self.model.load_state_dict(torch.load(pth, map_location=device))

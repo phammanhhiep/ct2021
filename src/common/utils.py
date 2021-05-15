@@ -30,7 +30,7 @@ def save_net(net, label, save_dir):
 
 
 #TODO: the implementation assume model is load to a CPU
-def load_net(net, label, load_dir):
+def load_net(net, label, load_dir, device="cpu"):
     name = "{}.pth".format(label)
     load_path = os.path.join(load_dir, name)
-    net.load_state_dict(torch.load(load_path, map_location="cpu"))
+    net.load_state_dict(torch.load(load_path, map_location=device))

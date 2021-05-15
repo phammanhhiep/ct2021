@@ -18,6 +18,7 @@ class FaceShifterTrainer:
         self.opt = opt
         self.last_epoch = 0
         self.trainer_opt = opt["FaceShifterTrainer"]
+        self.device = self.trainer_opt["device"]
         self.model = FaceShifterModel()
         self.init_model()
         self.create_criterion()
@@ -29,13 +30,15 @@ class FaceShifterTrainer:
         """Initialize model or load the trained paramaters in the given epoch
         """
         self.model.load_pretrained_idt_encoder(
-            self.opt["IdtEncoder"]["pretrained_model"])
+            self.opt["IdtEncoder"]["pretrained_model"], self.device)
 
         if self.opt["checkpoint"]["continue"]["status"]:
             self.load_checkpoint(
                 self.opt["checkpoint"]["continue"]["name"], 
                 self.opt["checkpoint"]["save_dir"])
             self.set_last_epoch()
+
+        self.model = self.model.to(self.device)
 
 
     def fit(self, dataloader):
@@ -52,6 +55,9 @@ class FaceShifterTrainer:
             for bi, batch_data in enumerate(dataloader):
                 logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
+ 
+                xs, xt, reconstructed = xs.to(self.device), xt.to(self.device),\
+                    reconstructed.to(self.device)
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
@@ -174,4 +180,4 @@ class FaceShifterTrainer:
             model_id (TYPE): Description
             load_dir (TYPE): Description
         """
-        self.model.load(model_id, load_dir)
+        self.model.load(model_id, load_dir, self.device)
