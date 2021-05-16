@@ -34,8 +34,9 @@ class FaceShifterTrainer:
             self.opt["IdtEncoder"]["pretrained_model"], self.device)
 
         if self.opt["checkpoint"]["continue"]:
-            self.load_checkpoint(
-                self.opt["checkpoint"]["checkpoint_id"], 
+            checkpoint_id = self.opt["checkpoint"]["checkpoint_id"]
+            logger.info("Load checkpoint {}".format(checkpoint_id))
+            self.load_checkpoint(checkpoint_id, 
                 self.opt["checkpoint"]["save_dir"])
 
         self.model = self.model.to(self.device)
