@@ -46,8 +46,8 @@ class FaceShifterTrainer:
         self.create_optimizer()  
         
         if self.checkpoint is not None:
-            self.g_optimizer.load_state_dict(checkpoint["g_optim_state_dict"])
-            self.d_optimizer.load_state_dict(checkpoint["d_optim_state_dict"])            
+            self.g_optimizer.load_state_dict(self.checkpoint["g_optim_state_dict"])
+            self.d_optimizer.load_state_dict(self.checkpoint["d_optim_state_dict"])            
 
 
     def fit(self, dataloader):
