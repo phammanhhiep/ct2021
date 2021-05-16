@@ -51,12 +51,12 @@ def save_model_from_checkpoint(pth, save_dir, device="cpu"):
 
 
 if __name__ == "__main__":
-    self.parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    self.parser.add_argument('--extract_model', type=str, 
+    parser.add_argument('--extract_model', type=str, 
         help="Relative path to checkpoint")
 
-    args = self.parser.parse_args()
+    args = parser.parse_args()
 
     if args.extract_model:
         checkpoint = args.extract_model
