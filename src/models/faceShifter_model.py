@@ -40,7 +40,6 @@ class FaceShifterModel(nn.Module):
         elif mode == 2:
             with torch.no_grad():
                 x_hat = self.g(xs, xt)
-                x_hat.requires_grad_()
             x = torch.cat((xs, xt))
             h1 = self.d(x)
             h2 = self.d(x_hat)
@@ -79,6 +78,15 @@ class FaceShifterModel(nn.Module):
         attr_encoder = self.g.get_attr_encoder()
         attr_encoder(x)
         return attr_encoder.get_decoder_features()
+
+
+    def detach_d_parameters(self, detach=True):
+        if detach:
+            for p in self.d.parameters():
+                p.requires_grad = False
+        else:
+            for p in self.d.parameters():
+                p.requires_grad = True                        
 
 
     def save(self, model_id, save_dir): 
