@@ -159,7 +159,7 @@ class RecLoss(nn.Module):
         """
         x = x * reconstructed
         y = y * reconstructed
-        return 0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
+        return 0.5 * nn.functional.mse_loss(x, y, reduction='mean')     
 
 
 class IdtLoss(nn.Module):
@@ -180,5 +180,5 @@ class IdtLoss(nn.Module):
         Returns:
             float: Description
         """
-        return torch.sum(
+        return torch.mean(
             1 - nn.functional.cosine_similarity(x_idt, y_idt, dim=1))
