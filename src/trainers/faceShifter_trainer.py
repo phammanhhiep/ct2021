@@ -91,13 +91,17 @@ class FaceShifterTrainer:
         y_attr = self.model.get_face_attribute(y)
         d_output = self.model(None, None, mode=3, x_hat=y)
 
+        #TODO: consider if detach d_output, and feed the detached d_output to loss 
+
         loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,
             reconstructed)
 
         logger.info("G loss: {}".format(loss.item()))
 
         self.g_optimizer.zero_grad()
+        self.model.detach_d_parameters()
         loss.backward()
+        self.model.detach_d_parameters(False)
         self.g_optimizer.step()
 
 
@@ -111,6 +115,7 @@ class FaceShifterTrainer:
             xt (TYPE): a batch of target images
         """
         real_pred, generated_pred = self.model(xs, xt, mode=2)
+  
         real_loss = self.d_criterion(real_pred, True)
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
@@ -119,7 +124,7 @@ class FaceShifterTrainer:
 
         self.d_optimizer.zero_grad()
         loss.backward()
-        self.d_optimizer.step()     
+        self.d_optimizer.step()
 
 
     def create_optimizer(self):
