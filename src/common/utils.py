@@ -2,6 +2,8 @@ from sys import stdout
 import os
 import logging
 from datetime import datetime
+import argparse
+
 
 import torch
 
@@ -34,3 +36,28 @@ def load_net(net, label, load_dir, device="cpu"):
     name = "{}.pth".format(label)
     load_path = os.path.join(load_dir, name)
     net.load_state_dict(torch.load(load_path, map_location=device))
+
+
+def save_model_from_checkpoint(pth, save_dir, device="cpu"):
+    """state dict of the generator from checkpoint
+    
+    Args:
+        pth (TYPE): Description
+    """
+    checkpoint = torch.load(pth, map_location=device)
+    model_name = os.path.basename(pth).split(".")[0] + ".pth"
+    model = checkpoint["g_state_dict"]
+    torch.save(model, os.path.joint(save_dir, model_name))
+
+
+if __name__ == "__main__":
+    self.parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    self.parser.add_argument('--extract_model', type=str, 
+        help="Relative path to checkpoint")
+
+    args = self.parser.parse_args()
+
+    if args.extract_model:
+        checkpoint = args.extract_model
+        save_model_from_checkpoint(checkpoint, "experiments/models/")
