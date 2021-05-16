@@ -199,8 +199,8 @@ class FaceShifterTrainer:
         load_path = os.path.join(load_dir, name)
         checkpoint = torch.load(load_path, map_location=self.device)
         self.last_epoch = checkpoint["epoch"]
-        self.model.load_g(checkpoint["g_state_dict"])
-        self.model.load_d(checkpoint["d_state_dict"])
+        self.model.load_g_state_dict(checkpoint["g_state_dict"])
+        self.model.load_d_state_dict(checkpoint["d_state_dict"])
         self.last_d_loss = checkpoint["d_loss"]
         self.last_g_loss = checkpoint["g_loss"]
 
