@@ -89,6 +89,14 @@ class FaceShifterModel(nn.Module):
                 p.requires_grad = True                        
 
 
+    def get_g_state_dict(self):
+        return self.g.state_dict()
+
+
+    def get_d_state_dict(self):
+        return self.d.state_dict()
+
+
     def save(self, model_id, save_dir): 
         """Save the model
         
@@ -114,6 +122,14 @@ class FaceShifterModel(nn.Module):
         if load_d:
             utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
                 load_dir, device)
+
+
+    def load_g_state_dict(self, state_dict):
+        self.g.load_state_dict(state_dict)
+
+
+    def load_d_state_dict(self, state_dict):
+        self.d.load_state_dict(state_dict)
 
 
     def load_pretrained_idt_encoder(self, pth, device):
