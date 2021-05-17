@@ -9,16 +9,15 @@ class TrainOptions:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser.add_argument('--option_file', type=str, 
+        self.parser.add_argument("--option_file", type=str, 
             help="Relative path to the option file")
-        self.parser.add_argument('--experiment', type=str, 
-            help="Name of the experiment; default name include 2 parts, YYMMDD \
-            and experiment count", 
-            default=datetime.today().strftime("%Y%m%d") + "_0")
+        self.parser.add_argument("--checkpoint", type=str, 
+            help="The name of a checkpoint to be loaded", default=None)
         
         args = self.gather_arguments()
         self.opt = self.gather_opt(args.option_file)
-        self.opt["checkpoint"]["experiment"] = args.experiment
+        if args.checkpoint is not None:
+            self.opt["checkpoint"]["checkpoint_id"] = args.checkpoint
 
 
     def gather_arguments(self):
