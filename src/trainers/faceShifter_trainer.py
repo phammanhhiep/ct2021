@@ -7,6 +7,7 @@ import torch
 from torch import nn
 
 
+from src.common import utils
 from src.models.faceShifter_model import FaceShifterModel
 from src.models.networks.loss import AEINetLoss, MultiScaleGanLoss
 
@@ -17,11 +18,6 @@ logger = logging.getLogger(__name__)
 class FaceShifterTrainer:
     def __init__(self, opt): 
         self.opt = opt
-        self.last_epoch = 0
-        self.last_d_loss = self.last_g_loss = 0
-        self.checkpoint = None
-        self.trainer_opt = opt["FaceShifterTrainer"]
-        self.device = self.trainer_opt["device"]
         self.initialize()
 
 
@@ -30,6 +26,12 @@ class FaceShifterTrainer:
         Create model, optimizers, and criterions; and load saved parameters if 
         available.
         """
+        self.last_epoch = 0
+        self.last_d_loss = self.last_g_loss = 0
+        self.checkpoint = None
+        self.trainer_opt = opt["FaceShifterTrainer"]
+        self.device = self.trainer_opt["device"]
+
         self.model = FaceShifterModel()
         self.model.load_pretrained_idt_encoder(
             self.opt["IdtEncoder"]["pretrained_model"], self.device)
@@ -46,8 +48,10 @@ class FaceShifterTrainer:
         self.create_optimizer()  
         
         if self.checkpoint is not None:
-            self.g_optimizer.load_state_dict(self.checkpoint["g_optim_state_dict"])
-            self.d_optimizer.load_state_dict(self.checkpoint["d_optim_state_dict"])            
+            self.g_optimizer.load_state_dict(
+                self.checkpoint["g_optim_state_dict"])
+            self.d_optimizer.load_state_dict(
+                self.checkpoint["d_optim_state_dict"])            
 
 
     def fit(self, dataloader):
@@ -184,8 +188,7 @@ class FaceShifterTrainer:
             "d_optim_state_dict": self.d_optimizer.state_dict()
         }
 
-        save_path = os.path.join(save_dir, name)
-        torch.save(checkpoint, save_path)
+        utils.save_state_dict(checkpoint, name, save_dir)
 
 
     def load_checkpoint(self, checkpoint_id, load_dir):
@@ -196,8 +199,8 @@ class FaceShifterTrainer:
             load_dir (TYPE): Description
         """
         name = "{}.tar".format(checkpoint_id)
-        load_path = os.path.join(load_dir, name)
-        checkpoint = torch.load(load_path, map_location=self.device)
+        checkpoint = utils.load_state_dict(name, load_dir, self.device)
+
         self.last_epoch = checkpoint["epoch"]
         self.model.load_g_state_dict(checkpoint["g_state_dict"])
         self.model.load_d_state_dict(checkpoint["d_state_dict"])
