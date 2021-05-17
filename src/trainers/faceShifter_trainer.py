@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class FaceShifterTrainer:
     def __init__(self, opt): 
         self.opt = opt
+        self.trainer_opt = opt["FaceShifterTrainer"]
         self.initialize()
 
 
@@ -29,7 +30,6 @@ class FaceShifterTrainer:
         self.last_epoch = 0
         self.last_d_loss = self.last_g_loss = 0
         self.checkpoint = None
-        self.trainer_opt = opt["FaceShifterTrainer"]
         self.device = self.trainer_opt["device"]
 
         self.model = FaceShifterModel()
