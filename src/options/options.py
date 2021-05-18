@@ -16,7 +16,7 @@ class TrainOptions:
         
         args = self.gather_arguments()
         self.option_file = args.option_file
-        self.opt = self.gather_opt()
+        self.gather_opt()
 
 
     def gather_arguments(self):
@@ -26,8 +26,7 @@ class TrainOptions:
 
     def gather_opt(self):
         with open(self.option_file, "r") as fd:
-            opt = yaml.load(fd, Loader=yaml.FullLoader)
-        return opt
+            self.opt = yaml.load(fd, Loader=yaml.FullLoader)
 
 
     def get_opt(self):
