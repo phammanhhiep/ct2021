@@ -1,9 +1,11 @@
 #!/bin/bash
 
+checkpoint_dir=/mnt/disks/data1/ct2021_checkpoint/
+
 get_lastest_checkpoint() {
     # Assume in the project directory
     epoch=0
-    for name in $(ls "checkpoint/" | grep "checkpoint" | grep -v "old"); do
+    for name in $(ls "$checkpoint_dir" | grep "checkpoint" | grep -v "old"); do
         new_epoch=$(echo $name | cut -d "." -f 1 | cut -d "_" -f 3)
         if (( $epoch < $new_epoch )); then
             epoch=$new_epoch
