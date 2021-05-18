@@ -15,9 +15,8 @@ class TrainOptions:
             help="The name of a checkpoint to be loaded", default=None)
         
         args = self.gather_arguments()
-        self.opt = self.gather_opt(args.option_file)
-        if args.checkpoint is not None:
-            self.opt["checkpoint"]["checkpoint_id"] = args.checkpoint
+        self.option_file = args.option_file
+        self.opt = self.gather_opt()
 
 
     def gather_arguments(self):
@@ -25,14 +24,21 @@ class TrainOptions:
         return args
 
 
-    def gather_opt(self, opt_file):
-        with open(opt_file, "r") as fd:
+    def gather_opt(self):
+        with open(self.opt_file, "r") as fd:
             opt = yaml.load(fd, Loader=yaml.FullLoader)
         return opt
 
 
     def get_opt(self):
         return self.opt
+
+
+    def save(self):
+        """Save the options to disk
+        """
+        with open(self.option_file, 'w') as fd:
+            _ = yaml.dump(self.opt, fd)        
 
 
 class EvalOptions(TrainOptions):
@@ -43,4 +49,5 @@ class EvalOptions(TrainOptions):
             help="Relative path to the option file")
         
         args = self.gather_arguments()
-        self.opt = self.gather_opt(args.option_file)
+        self.option_file = args.option_file
+        self.opt = self.gather_opt()
