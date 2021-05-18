@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class FaceShifterTrainer:
-    def __init__(self, opt): 
-        self.opt = opt
+    def __init__(self, opt):
+        self.opt_obj = opt 
+        self.opt = opt.get_opt()
         self.trainer_opt = opt["FaceShifterTrainer"]
         self.initialize()
 
@@ -188,6 +189,8 @@ class FaceShifterTrainer:
 
         utils.save_state_dict(checkpoint, name, save_dir, 
             remove_old=self.opt["checkpoint"]["remove_old"])
+        self.opt["checkpoint"]["checkpoint_id"] = name
+        self.opt_obj.save()
 
 
     def load_checkpoint(self, checkpoint_id, load_dir):
