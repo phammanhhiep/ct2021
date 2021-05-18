@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class FaceShifterTrainer:
-    def __init__(self, opt):
-        self.opt_obj = opt 
-        self.opt = opt.get_opt()
+    def __init__(self, opt_obj):
+        self.opt_obj = opt_obj 
+        self.opt = opt_obj.get_opt()
         self.trainer_opt = opt["FaceShifterTrainer"]
         self.initialize()
 
