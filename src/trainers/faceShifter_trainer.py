@@ -18,7 +18,7 @@ class FaceShifterTrainer:
     def __init__(self, opt_obj):
         self.opt_obj = opt_obj 
         self.opt = opt_obj.get_opt()
-        self.trainer_opt = opt["FaceShifterTrainer"]
+        self.trainer_opt = self.opt["FaceShifterTrainer"]
         self.initialize()
 
 
