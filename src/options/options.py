@@ -25,7 +25,7 @@ class TrainOptions:
 
 
     def gather_opt(self):
-        with open(self.opt_file, "r") as fd:
+        with open(self.option_file, "r") as fd:
             opt = yaml.load(fd, Loader=yaml.FullLoader)
         return opt
 
