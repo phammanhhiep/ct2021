@@ -42,6 +42,6 @@ if __name__ == "__main__":
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
     try:
-        train(opt, logger)
+        train(opt_obj, logger)
     except Exception as e:
         logger.error(str(e))
