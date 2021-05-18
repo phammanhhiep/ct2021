@@ -175,7 +175,7 @@ class FaceShifterTrainer:
             epoch (TYPE): Description
             save_dir (TYPE): Description
         """
-        name = "faceShiter_checkpoint_{}.tar".format(epoch)
+        name = "faceShifter_checkpoint_{}.tar".format(epoch)
         checkpoint = {
             "epoch": epoch,
             "g_state_dict": self.model.get_g_state_dict(),
