@@ -50,7 +50,7 @@ def save_state_dict(state, name, save_dir, remove_old=True):
         name (TYPE): Description
         save_dir (TYPE): Description
     """
-    save_path = os.path.join(save_dir, name)
+    save_path = os.path.join(save_dir, name + ".tar")
     old_path = save_path + ".old"
     if os.path.exists(save_path):
         os.rename(save_path, old_path)
