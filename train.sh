@@ -3,7 +3,7 @@
 get_lastest_checkpoint() {
     # Assume in the project directory
     epoch=0
-    for name in $(ls "checkpoint/" | grep "checkpoint"); do
+    for name in $(ls "checkpoint/" | grep "checkpoint" | grep -v "old"); do
         new_epoch=$(echo $name | cut -d "." -f 1 | cut -d "_" -f 3)
         if (( $epoch < $new_epoch )); then
             epoch=$new_epoch
