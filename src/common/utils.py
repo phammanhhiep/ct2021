@@ -94,7 +94,7 @@ def extract_model_from_checkpoint(pth, save_dir, device="cpu"):
     checkpoint = torch.load(pth, map_location=device)
     model_name = os.path.basename(pth).split(".")[0] + ".pth"
     model = checkpoint["g_state_dict"]
-    torch.save(model, os.path.joint(save_dir, model_name))
+    torch.save(model, os.path.join(save_dir, model_name))
 
 
 if __name__ == "__main__":
