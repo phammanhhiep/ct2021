@@ -37,8 +37,8 @@ def train(opt, logger):
 if __name__ == "__main__":
     from src.common import utils
     opt = TrainOptions()
-    logger = utils.create_root_logger(level=opt.opt["log"]["level"], 
-        file_name=opt.opt["log"]["file_name"])
+    logger = utils.create_root_logger(level=opt.get_opt()["log"]["level"], 
+        file_name=opt.get_opt()["log"]["file_name"])
     try:
         train(opt, logger)
     except Exception as e:
