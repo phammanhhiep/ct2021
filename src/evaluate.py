@@ -24,10 +24,12 @@ def evaluate(opt, logger):
         opt (TYPE): Description
         logger (TYPE): Description
     """
+    logger.info("Load pretrained model")
     model = FaceShifterModel()
-    model.load(opt["model"]["name"], opt["model"]["load_dir"], load_d=False)
+    model.load(opt["model"]["model_id"], opt["model"]["load_dir"], load_d=False)
     model.eval()
 
+    logger.info("Load pretrained head pose estimator")
     hp_estimator = HopeNet()
     hp_estimator.load(opt["head_pose_estimator"]["name"], 
         opt["head_pose_estimator"]["load_dir"])
@@ -35,7 +37,7 @@ def evaluate(opt, logger):
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["dataset"]["evaluation"]
+    data_list = opt["dataset"]["data_list"]
     data_root_dir = opt["dataset"]["root_dir"]
     batch_size = opt["dataset"]["batch_size"]
     num_worker = opt["dataset"]["num_worker"]
@@ -56,8 +58,8 @@ def evaluate(opt, logger):
         num_workers=num_worker, shuffle=False)
     generated_count = len(dataset)
 
-    for j, batch_data in enumerate(dataloader):
-        logger.info("Generate batch of images: #{}".format(j))
+    for bi, batch_data in enumerate(dataloader):
+        logger.info("Generate images from batch #{}".format(bi))
         xs, xt, reconstructed, xs_names, xt_names = batch_data
         
         with torch.no_grad():
@@ -68,7 +70,7 @@ def evaluate(opt, logger):
                 facial_expression_estimator)
 
         logger.info("Save {} generated images".format(x_hat.size()[0]))
-        save_generated_images((x_hat, xs_names, xt_names), img_name, j,
+        save_generated_images((x_hat, xs_names, xt_names), img_name, bi,
             opt["generated_image"]["save_dir"])
 
     idt_measure = len(idt_dist) / generated_count
@@ -111,12 +113,15 @@ def idt_retrieval(xs, xt, y, model, idt_dist):
     true_dist = compute_idt_dist(y_idt, xs_idt)
  
     count = len(idt_dist)
+    new_idt_dist = []
 
     for i in range(count):
         z_idt, z_dist = idt_dist[i]
         if compute_idt_dist(z_idt, xs_idt) < z_dist or \
-        compute_idt_dist(z_idt, xt_idt) < z_dist:
-            idt_dist.pop(i)
+        compute_idt_dist(z_idt, xt_idt) > z_dist:
+            new_idt_dist.append([z_idt, z_dist])
+    
+    idt_dist = new_idt_dist
 
     if compute_idt_dist(y_idt, xt_idt) >= true_dist:
         idt_dist.append([y_idt, true_dist])
@@ -186,7 +191,8 @@ if __name__ == "__main__":
     opt = EvalOptions(); opt = opt.get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
-    try:
-        evaluate(opt, logger)
-    except Exception as e:
-        logger.error(str(e))
+    # try:
+    #     evaluate(opt, logger)
+    # except Exception as e:
+    #     logger.error(str(e))
+    evaluate(opt, logger)
