@@ -107,4 +107,4 @@ if __name__ == "__main__":
 
     if args.extract_model:
         checkpoint = args.extract_model
-        save_model_from_checkpoint(checkpoint, "experiments/models/")
+        extract_model_from_checkpoint(checkpoint, "experiments/models/")
