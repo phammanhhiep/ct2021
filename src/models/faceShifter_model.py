@@ -1,3 +1,6 @@
+import os
+
+
 import torch
 from torch import nn
 
@@ -104,10 +107,7 @@ class FaceShifterModel(nn.Module):
             model_id (TYPE): Description
             save_dir (TYPE): Description
         """
-        utils.save_net(self.g, self.g_checkpoint_name.format(model_id),
-            save_dir)
-        utils.save_net(self.d, self.d_checkpoint_name.format(model_id),
-            save_dir)
+        raise Exception("Deprecated")
 
 
     def load(self, model_id, load_dir, device="cpu", load_d=True):
@@ -116,12 +116,9 @@ class FaceShifterModel(nn.Module):
         Args:
             model_id (TYPE): Description
             load_dir (TYPE): Description
-        """
-        utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
-            load_dir, device)
-        if load_d:
-            utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
-                load_dir, device)
+        """          
+        load_path = os.path.join(load_dir, model_id + ".pth")
+        self.g.load_state_dict(torch.load(load_path, map_location=device))        
 
 
     def load_g_state_dict(self, state_dict):
