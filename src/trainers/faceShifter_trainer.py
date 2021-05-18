@@ -186,7 +186,8 @@ class FaceShifterTrainer:
             "d_optim_state_dict": self.d_optimizer.state_dict()
         }
 
-        utils.save_state_dict(checkpoint, name, save_dir)
+        utils.save_state_dict(checkpoint, name, save_dir, 
+            remove_old=self.opt["checkpoint"]["remove_old"])
 
 
     def load_checkpoint(self, checkpoint_id, load_dir):
