@@ -49,4 +49,4 @@ class EvalOptions(TrainOptions):
         
         args = self.gather_arguments()
         self.option_file = args.option_file
-        self.opt = self.gather_opt()
+        self.gather_opt()
