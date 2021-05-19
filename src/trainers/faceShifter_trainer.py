@@ -103,7 +103,7 @@ class FaceShifterTrainer:
         
         """
         y = self.model(xs, xt, mode=1)
-        xs_idt = self.model.get_face_identity(xs)
+        xs_idt = self.model.get_face_identity(xs, detach=True)
         y_idt = self.model.get_face_identity(y)
         xt_attr = self.model.get_face_attribute(xt)
         y_attr = self.model.get_face_attribute(y)
