@@ -65,16 +65,25 @@ class FaceShifterModel(nn.Module):
 
 
     def get_g_params(self):
-        return list(self.g.parameters())
+        """Exclude parameters of the identity encoder
+        
+        Returns:
+            TYPE: Description
+        """
+        return list(self.g.get_attr_encoder_params()) + \
+            list(self.g.get_generator_params())
 
 
     def get_d_params(self):
         return list(self.d.parameters())
 
 
-    def get_face_identity(self, x):
+    def get_face_identity(self, x, detach=False):
         idt_encoder = self.g.get_idt_encoder()
-        return idt_encoder(x)
+        idt = idt_encoder(x)
+        if detach:
+            idt = idt.detach()
+        return idt
 
 
     def get_face_attribute(self, x):
@@ -110,7 +119,7 @@ class FaceShifterModel(nn.Module):
         raise Exception("Deprecated")
 
 
-    def load(self, model_id, load_dir, device="cpu", load_d=True):
+    def load(self, model_id, load_dir, device="cpu"):
         """Summary
         
         Args:
