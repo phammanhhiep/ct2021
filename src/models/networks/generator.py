@@ -17,8 +17,9 @@ class AEINet(nn.Module):
         self.generator = AADGenerator()
 
 
+    #TODO: consider to normalize the identity idt before feeding it to the generator
     def forward(self, xs, xt):
-        """Summary
+        """Identity is detach by default.
         
         Args:
             xs (TYPE): a batch of source images
@@ -26,10 +27,18 @@ class AEINet(nn.Module):
         Returns:
             TYPE: Description
         """
-        idt = self.idt_encoder(xs)
+        idt = self.idt_encoder(xs).detach()
         _ = self.attr_encoder(xt)
         multi_level_attrs = self.attr_encoder.get_decoder_features()
         return self.generator(idt, multi_level_attrs)
+
+
+    def get_attr_encoder_params(self):
+        return self.attr_encoder.parameters()
+
+
+    def get_generator_params(self):
+        return self.generator.parameters()
 
 
     def get_idt_encoder(self):
