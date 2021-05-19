@@ -100,14 +100,14 @@ class IdtEncoder(nn.Module):
     #TODO: Provide an option to choose different model from torchvision
     def __init__(self):
         """The encoder is assumed to be a pretrained model, and thus should not
-        be optimzed with the rest of the model.
+        be optimzed with the rest of the model. However, the requirement is
+        assumed to be enforced by the caller.
         
         Args:
             opt (TYPE): Description
         """
         super().__init__()
         self.model = torchvision.models.resnet101(num_classes=256)
-        self.model.requires_grad_(False)
         
 
     #TOD0: consider to downsample the input as in https://github.com/phammanhhiep/unoffical-faceshifter
