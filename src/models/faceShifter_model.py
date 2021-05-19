@@ -55,6 +55,8 @@ class FaceShifterModel(nn.Module):
 
 
     def create_g(self):
+        """Summary
+        """
         self.g = AEINet()
         self.g_checkpoint_name = "{}_g" # e.g. modelid_g
     
