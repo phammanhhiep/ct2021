@@ -26,7 +26,7 @@ def evaluate(opt, logger):
     """
     logger.info("Load pretrained model")
     model = FaceShifterModel()
-    model.load(opt["model"]["model_id"], opt["model"]["load_dir"], load_d=False)
+    model.load_g(opt["model"]["model_id"], opt["model"]["load_dir"])
     model.eval()
 
     logger.info("Load pretrained head pose estimator")
@@ -43,7 +43,7 @@ def evaluate(opt, logger):
     num_worker = opt["dataset"]["num_worker"]
 
     date_str = datetime.today().strftime('%Y%m%d')
-    img_name = date_str + "_{}_{}.png"
+    img_name =  "{}_{}_" + date_str + ".png"
     stat_pth = opt["statistics"].format(date_str)
 
     idt_measure = 0
@@ -185,8 +185,7 @@ if __name__ == "__main__":
     opt = EvalOptions(); opt = opt.get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
         file_name=opt["log"]["file_name"])
-    # try:
-    #     evaluate(opt, logger)
-    # except Exception as e:
-    #     logger.error(str(e))
-    evaluate(opt, logger)
+    try:
+        evaluate(opt, logger)
+    except Exception as e:
+        logger.error(str(e))
