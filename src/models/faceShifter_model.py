@@ -111,18 +111,8 @@ class FaceShifterModel(nn.Module):
         return self.d.state_dict()
 
 
-    def save(self, model_id, save_dir): 
-        """Save the model
-        
-        Args:
-            model_id (TYPE): Description
-            save_dir (TYPE): Description
-        """
-        raise Exception("Deprecated")
-
-
-    def load(self, model_id, load_dir, device="cpu"):
-        """Summary
+    def load_g(self, model_id, load_dir, device="cpu"):
+        """Load g model from file
         
         Args:
             model_id (TYPE): Description
