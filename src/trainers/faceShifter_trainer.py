@@ -115,7 +115,7 @@ class FaceShifterTrainer:
             xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,reconstructed)
         self.last_g_loss = loss.item()
         logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
-            G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
+G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
 
         self.g_optimizer.zero_grad()
         self.model.detach_d_parameters()
