@@ -75,9 +75,11 @@ class FaceShifterTrainer:
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
                     self.fit_g(xs, xt, reconstructed)
+                    logger.info("Complete Fit g")
                 
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
                 self.fit_d(xs, xt)
+                logger.info("Complete Fit d")
                 
                 if bi % self.opt["checkpoint"]["save_interval"] == 0 and bi > 0:
                     logger.info(
