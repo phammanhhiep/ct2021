@@ -112,7 +112,8 @@ class FaceShifterTrainer:
         loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,
             reconstructed)
         self.last_g_loss = loss.item()
-        logger.info("G loss: {}".format(loss.item()))
+        logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
+            G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
 
         self.g_optimizer.zero_grad()
         self.model.detach_d_parameters()
@@ -137,7 +138,7 @@ class FaceShifterTrainer:
         loss = real_loss + generated_loss
 
         self.last_d_loss = loss.item()
-        logger.info("D loss: {}".format(loss.item()))
+        logger.info("D_loss: {}".format(loss))
 
         self.d_optimizer.zero_grad()
         loss.backward()
