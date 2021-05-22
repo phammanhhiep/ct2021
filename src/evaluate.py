@@ -92,7 +92,8 @@ def collect_idts(xs, xt, y, model, idt_dist, real_idt, generated_idt):
     xs_idt = model.get_face_identity(xs)
     xt_idt = model.get_face_identity(xt)
     y_idt = model.get_face_identity(y)
-    real_idt += [xs_idt, xt_idt]
+    
+    real_idt.append(xs_idt); real_idt.append(xt_idt)
     generated_idt.append(y_idt)
     idt_dist.append(compute_idt_dist(y_idt, xs_idt))
 
