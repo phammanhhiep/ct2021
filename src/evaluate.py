@@ -24,16 +24,11 @@ def evaluate(opt, logger):
         opt (TYPE): Description
         logger (TYPE): Description
     """
-    logger.info("Load pretrained model")
-    model = FaceShifterModel()
-    model.load_g(opt["model"]["model_id"], opt["model"]["load_dir"])
-    model.eval()
+    model_id = opt["model"]["model_id"]
+    model_load_dir = opt["model"]["load_dir"]
 
-    logger.info("Load pretrained head pose estimator")
-    hp_estimator = HopeNet()
-    hp_estimator.load(opt["head_pose_estimator"]["name"], 
-        opt["head_pose_estimator"]["load_dir"])
-    hp_estimator.eval()
+    hp_model_id = opt["head_pose_estimator"]["name"]
+    hp_model_load_dir = opt["head_pose_estimator"]["load_dir"]
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
@@ -55,6 +50,15 @@ def evaluate(opt, logger):
     real_idt = []
     generated_idt = []
 
+    logger.info("Load pretrained model: {}".format(model_id))
+    model = FaceShifterModel()
+    model.load_g(model_id, model_load_dir)
+    model.eval()
+
+    logger.info("Load pretrained head pose estimator")
+    hp_estimator = HopeNet()
+    hp_estimator.load(hp_model_id, hp_model_load_dir)
+    hp_estimator.eval()
 
     dataset = Dataset(data_root_dir, data_list, return_name=True)
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
@@ -92,7 +96,7 @@ def collect_idts(xs, xt, y, model, idt_dist, real_idt, generated_idt):
     xs_idt = model.get_face_identity(xs)
     xt_idt = model.get_face_identity(xt)
     y_idt = model.get_face_identity(y)
-    
+
     real_idt.append(xs_idt); real_idt.append(xt_idt)
     generated_idt.append(y_idt)
     idt_dist.append(compute_idt_dist(y_idt, xs_idt))
