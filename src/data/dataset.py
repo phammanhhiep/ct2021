@@ -29,8 +29,6 @@ class Dataset(data.Dataset):
             reader = csv.reader(fd, delimiter=",")
             self.data_names = list(reader)
 
-        self.data_names = np.random.permutation(self.data_names)
-
         if transforms is None:
             self.transforms = T.Compose([
                 T.Resize((256, 256)),
@@ -43,7 +41,8 @@ class Dataset(data.Dataset):
 
 
     def __getitem__(self, index):
-        """Return a data point from a sampled file
+        """Return a data point from a sampled file. The reconstructed value is 
+        transform to a tensor of size (1,1,1).
         
         Args:
             index (TYPE): Description
@@ -54,8 +53,9 @@ class Dataset(data.Dataset):
         source_name, target_name, reconstructed = self.data_names[index]
         reconstructed = torch.tensor([[[int(reconstructed)]]])
         sample_source = Image.open(os.path.join(self.root_dir, source_name))
-        sample_target = Image.open(os.path.join(self.root_dir, target_name))
         sample_source = self.transforms(sample_source)
+
+        sample_target = Image.open(os.path.join(self.root_dir, target_name))
         sample_target = self.transforms(sample_target)
 
         sample = [sample_source, sample_target, reconstructed]
