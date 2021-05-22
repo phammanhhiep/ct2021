@@ -111,7 +111,7 @@ class FaceShifterTrainer:
         y_attr = self.model.get_face_attribute(y)
         d_output = self.model(None, None, mode=3, x_hat=y)
 
-        adv_loss, attr_loss, rec_loss, idt_loss, loss = self.g_criterion(
+        loss, adv_loss, attr_loss, rec_loss, idt_loss = self.g_criterion(
             xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,reconstructed)
         self.last_g_loss = loss.item()
         logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
