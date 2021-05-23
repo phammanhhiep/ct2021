@@ -33,8 +33,8 @@ class AttrEncoder(nn.Module):
         self.dbn = 6
         self.decoder_features = []
         self.encoder_features = []
-        self.encoder = []
-        self.decoder = []
+        self.encoder = nn.ModuleList()
+        self.decoder = nn.ModuleList()
 
 
         for n in range(self.ebn):
@@ -100,14 +100,14 @@ class IdtEncoder(nn.Module):
     #TODO: Provide an option to choose different model from torchvision
     def __init__(self):
         """The encoder is assumed to be a pretrained model, and thus should not
-        be optimzed with the rest of the model.
+        be optimzed with the rest of the model. However, the requirement is
+        assumed to be enforced by the caller.
         
         Args:
             opt (TYPE): Description
         """
         super().__init__()
         self.model = torchvision.models.resnet101(num_classes=256)
-        self.model.requires_grad_(False)
         
 
     #TOD0: consider to downsample the input as in https://github.com/phammanhhiep/unoffical-faceshifter
@@ -124,5 +124,5 @@ class IdtEncoder(nn.Module):
         return h.unsqueeze(-1).unsqueeze(-1)
 
 
-    def load(self, pth):
-        self.model.load_state_dict(torch.load(pth, map_location="cpu"))
+    def load(self, pth, device="cpu"):
+        self.model.load_state_dict(torch.load(pth, map_location=device))

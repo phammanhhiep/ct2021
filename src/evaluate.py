@@ -24,24 +24,21 @@ def evaluate(opt, logger):
         opt (TYPE): Description
         logger (TYPE): Description
     """
-    model = FaceShifterModel()
-    model.load(opt["model"]["name"], opt["model"]["load_dir"], load_d=False)
-    model.eval()
+    model_id = opt["model"]["model_id"]
+    model_load_dir = opt["model"]["load_dir"]
 
-    hp_estimator = HopeNet()
-    hp_estimator.load(opt["head_pose_estimator"]["name"], 
-        opt["head_pose_estimator"]["load_dir"])
-    hp_estimator.eval()
+    hp_model_id = opt["head_pose_estimator"]["name"]
+    hp_model_load_dir = opt["head_pose_estimator"]["load_dir"]
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["dataset"]["evaluation"]
+    data_list = opt["dataset"]["data_list"]
     data_root_dir = opt["dataset"]["root_dir"]
     batch_size = opt["dataset"]["batch_size"]
     num_worker = opt["dataset"]["num_worker"]
 
     date_str = datetime.today().strftime('%Y%m%d')
-    img_name = date_str + "_{}_{}.png"
+    img_name =  "{}_{}_" + date_str + ".png"
     stat_pth = opt["statistics"].format(date_str)
 
     idt_measure = 0
@@ -50,28 +47,40 @@ def evaluate(opt, logger):
     
     result = []
     idt_dist = []
+    real_idt = []
+    generated_idt = []
+
+    logger.info("Load pretrained model: {}".format(model_id))
+    model = FaceShifterModel()
+    model.load_g(model_id, model_load_dir)
+    model.eval()
+
+    logger.info("Load pretrained head pose estimator")
+    hp_estimator = HopeNet()
+    hp_estimator.load(hp_model_id, hp_model_load_dir)
+    hp_estimator.eval()
 
     dataset = Dataset(data_root_dir, data_list, return_name=True)
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
         num_workers=num_worker, shuffle=False)
     generated_count = len(dataset)
 
-    for j, batch_data in enumerate(dataloader):
-        logger.info("Generate batch of images: #{}".format(j))
+    for bi, batch_data in enumerate(dataloader):
+        logger.info("Generate images from batch #{}".format(bi))
         xs, xt, reconstructed, xs_names, xt_names = batch_data
         
         with torch.no_grad():
             x_hat = model(xs, xt)
-            idt_retrieval(xs, xt, x_hat, model, idt_dist)
+            collect_idts(xs, xt, x_hat, model, idt_dist, real_idt, generated_idt)
             hp_measure += head_pose_error(xt, x_hat, hp_estimator)
             fe_measure += facial_expression_error(xt, x_hat, 
                 facial_expression_estimator)
 
         logger.info("Save {} generated images".format(x_hat.size()[0]))
-        save_generated_images((x_hat, xs_names, xt_names), img_name, j,
+        save_generated_images((x_hat, xs_names, xt_names), img_name, bi,
             opt["generated_image"]["save_dir"])
 
-    idt_measure = len(idt_dist) / generated_count
+    idt_measure = idt_retrieval(idt_dist, real_idt, generated_idt) / generated_count
     hp_measure = hp_measure / generated_count
     fe_measure = fe_measure / generated_count
 
@@ -81,16 +90,20 @@ def evaluate(opt, logger):
         (idt_measure, hp_measure.item(), fe_measure.item()), stat_pth)
 
 
-def idt_retrieval(xs, xt, y, model, idt_dist):
-    """
-    Compute idt distance between generated image and true images, and determine
-    if that distance is smaller than between that generated image and the rest of
-    real images. To avoid loading all real images at once, the implementation 
-    stores the true distance and the identity of every generated images in 
-    idt_dist to compare when real images are available. If there exist a real 
-    image, whose distance with the generated image is less than the true distance, 
-    the generated image is no longer consider in the next iteration. 
+def collect_idts(xs, xt, y, model, idt_dist, real_idt, generated_idt):
+    compute_idt_dist = \
+        lambda x, y: torch.sum(nn.functional.cosine_similarity(x, y, dim=1))
+    xs_idt = model.get_face_identity(xs)
+    xt_idt = model.get_face_identity(xt)
+    y_idt = model.get_face_identity(y)
 
+    real_idt.append(xs_idt); real_idt.append(xt_idt)
+    generated_idt.append(y_idt)
+    idt_dist.append(compute_idt_dist(y_idt, xs_idt))
+
+
+def idt_retrieval(idt_dist, real_idt, generated_idt):
+    """
     Args:
         xs (TYPE): source image (identity image)
         xt (TYPE): target image
@@ -101,26 +114,17 @@ def idt_retrieval(xs, xt, y, model, idt_dist):
     Returns:
         TYPE: Description
     """
-
     compute_idt_dist = \
         lambda x, y: torch.sum(nn.functional.cosine_similarity(x, y, dim=1))
+    diff_idt = len(generated_idt)
 
-    xs_idt = model.get_face_identity(xs)
-    xt_idt = model.get_face_identity(xt)
-    y_idt = model.get_face_identity(y)
-    true_dist = compute_idt_dist(y_idt, xs_idt)
- 
-    count = len(idt_dist)
-
-    for i in range(count):
-        z_idt, z_dist = idt_dist[i]
-        if compute_idt_dist(z_idt, xs_idt) < z_dist or \
-        compute_idt_dist(z_idt, xt_idt) < z_dist:
-            idt_dist.pop(i)
-
-    if compute_idt_dist(y_idt, xt_idt) >= true_dist:
-        idt_dist.append([y_idt, true_dist])
-
+    for gidt, dist in zip(generated_idt, idt_dist):
+        for idt in real_idt:
+            with torch.no_grad():
+                if dist > compute_idt_dist(idt, gidt):
+                    diff_idt -= 1
+                    break
+    return diff_idt
 
 def head_pose_error(x, y, estimator):
     """Summary

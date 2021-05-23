@@ -1,3 +1,6 @@
+import os
+
+
 import torch
 from torch import nn
 
@@ -38,7 +41,8 @@ class FaceShifterModel(nn.Module):
         if mode == 1:
             h = self.g(xs, xt)
         elif mode == 2:
-            x_hat = self.g(xs, xt)
+            with torch.no_grad():
+                x_hat = self.g(xs, xt)
             x = torch.cat((xs, xt))
             h1 = self.d(x)
             h2 = self.d(x_hat)
@@ -51,6 +55,8 @@ class FaceShifterModel(nn.Module):
 
 
     def create_g(self):
+        """Summary
+        """
         self.g = AEINet()
         self.g_checkpoint_name = "{}_g" # e.g. modelid_g
     
@@ -61,16 +67,25 @@ class FaceShifterModel(nn.Module):
 
 
     def get_g_params(self):
-        return list(self.g.parameters())
+        """Exclude parameters of the identity encoder
+        
+        Returns:
+            TYPE: Description
+        """
+        return list(self.g.get_attr_encoder_params()) + \
+            list(self.g.get_generator_params())
 
 
     def get_d_params(self):
         return list(self.d.parameters())
 
 
-    def get_face_identity(self, x):
+    def get_face_identity(self, x, detach=False):
         idt_encoder = self.g.get_idt_encoder()
-        return idt_encoder(x)
+        idt = idt_encoder(x)
+        if detach:
+            idt = idt.detach()
+        return idt
 
 
     def get_face_attribute(self, x):
@@ -79,32 +94,41 @@ class FaceShifterModel(nn.Module):
         return attr_encoder.get_decoder_features()
 
 
-    def save(self, model_id, save_dir): 
-        """Save the model
-        
-        Args:
-            model_id (TYPE): Description
-            save_dir (TYPE): Description
-        """
-        utils.save_net(self.g, self.g_checkpoint_name.format(model_id),
-            save_dir)
-        utils.save_net(self.d, self.d_checkpoint_name.format(model_id),
-            save_dir)
+    def detach_d_parameters(self, detach=True):
+        if detach:
+            for p in self.d.parameters():
+                p.requires_grad = False
+        else:
+            for p in self.d.parameters():
+                p.requires_grad = True                        
 
 
-    def load(self, model_id, load_dir, load_d=True):
-        """Summary
+    def get_g_state_dict(self):
+        return self.g.state_dict()
+
+
+    def get_d_state_dict(self):
+        return self.d.state_dict()
+
+
+    def load_g(self, model_id, load_dir, device="cpu"):
+        """Load g model from file
         
         Args:
             model_id (TYPE): Description
             load_dir (TYPE): Description
-        """
-        utils.load_net(self.g, self.g_checkpoint_name.format(model_id),
-            load_dir)
-        if load_d:
-            utils.load_net(self.d, self.d_checkpoint_name.format(model_id),
-                load_dir)
+        """          
+        load_path = os.path.join(load_dir, model_id + ".pth")
+        self.g.load_state_dict(torch.load(load_path, map_location=device))        
 
 
-    def load_pretrained_idt_encoder(self, pth):
-        self.g.load_pretrained_idt_encoder(pth)
+    def load_g_state_dict(self, state_dict):
+        self.g.load_state_dict(state_dict)
+
+
+    def load_d_state_dict(self, state_dict):
+        self.d.load_state_dict(state_dict)
+
+
+    def load_pretrained_idt_encoder(self, pth, device):
+        self.g.load_pretrained_idt_encoder(pth, device)

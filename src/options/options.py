@@ -9,16 +9,14 @@ class TrainOptions:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser.add_argument('--option_file', type=str, 
+        self.parser.add_argument("--option_file", type=str, 
             help="Relative path to the option file")
-        self.parser.add_argument('--experiment', type=str, 
-            help="Name of the experiment; default name include 2 parts, YYMMDD \
-            and experiment count", 
-            default=datetime.today().strftime("%Y%m%d") + "_0")
+        self.parser.add_argument("--checkpoint", type=str, 
+            help="The name of a checkpoint to be loaded", default=None)
         
         args = self.gather_arguments()
-        self.opt = self.gather_opt(args.option_file)
-        self.opt["checkpoint"]["experiment"] = args.experiment
+        self.option_file = args.option_file
+        self.gather_opt()
 
 
     def gather_arguments(self):
@@ -26,14 +24,20 @@ class TrainOptions:
         return args
 
 
-    def gather_opt(self, opt_file):
-        with open(opt_file, "r") as fd:
-            opt = yaml.load(fd, Loader=yaml.FullLoader)
-        return opt
+    def gather_opt(self):
+        with open(self.option_file, "r") as fd:
+            self.opt = yaml.load(fd, Loader=yaml.FullLoader)
 
 
     def get_opt(self):
         return self.opt
+
+
+    def save(self):
+        """Save the options to disk
+        """
+        with open(self.option_file, 'w') as fd:
+            _ = yaml.dump(self.opt, fd)        
 
 
 class EvalOptions(TrainOptions):
@@ -44,4 +48,5 @@ class EvalOptions(TrainOptions):
             help="Relative path to the option file")
         
         args = self.gather_arguments()
-        self.opt = self.gather_opt(args.option_file)
+        self.option_file = args.option_file
+        self.gather_opt()

@@ -7,12 +7,12 @@ import numpy as np
 def create_data_list(data_names, distinct_pairs, same_files):
     data_list = []
     data_names = np.random.permutation(data_names)
-    distint_files = int(distinct_pairs * 2)
-    d = data_names[: distint_files]
+    distinct_files = int(distinct_pairs * 2)
+    d = data_names[: distinct_files]
     s = data_names[-int(same_files):]
 
-    data_list = [[d[i],d[i+1],1] for i in range(0, distinct_pairs, 2)]
-    data_list += [[s[i],s[i],0] for i in range(same_files)]
+    data_list = [[d[i],d[i+1],0] for i in range(0, distinct_files, 2)]
+    data_list += [[s[i],s[i],1] for i in range(same_files)]
     return data_list
 
 

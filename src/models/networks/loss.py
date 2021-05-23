@@ -49,8 +49,11 @@ class AEINetLoss(nn.Module):
         attr_loss = self.attr_criterion(xt_attr, y_attr)
         rec_loss = self.rec_criterion(xt, y, reconstructed)
         idt_loss = self.idt_criterion(xs_idt, y_idt)
-        return adv_loss + attr_loss * self.AttrLoss_w + \
+
+        loss = adv_loss + attr_loss * self.AttrLoss_w + \
             rec_loss * self.RecLoss_w + idt_loss * self.IdtLoss_w
+
+        return loss, adv_loss, attr_loss, rec_loss, idt_loss
 
 
 class MultiScaleGanLoss(nn.Module):
@@ -155,7 +158,7 @@ class RecLoss(nn.Module):
         """
         x = x * reconstructed
         y = y * reconstructed
-        return 0.5 * nn.functional.mse_loss(x, y, reduction="sum")     
+        return 0.5 * nn.functional.mse_loss(x, y, reduction='mean')     
 
 
 class IdtLoss(nn.Module):
@@ -176,5 +179,5 @@ class IdtLoss(nn.Module):
         Returns:
             float: Description
         """
-        return torch.sum(
+        return torch.mean(
             1 - nn.functional.cosine_similarity(x_idt, y_idt, dim=1))

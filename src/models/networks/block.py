@@ -17,24 +17,23 @@ class AADResBlk(nn.Module):
             out_channels (TYPE): Description
         """
         super().__init__()
-        self.model = []
         self.diff_in_out_channels = out_channels != in_channels
         conv_kernel_size = 3
         conv_stride = 1
         conv_padding = 1
 
-        self.model.append(nn.Sequential(
+        self.sq1 = nn.Sequential(
             AADNorm(in_channels, attr_channels, idt_channels),
             nn.ReLU(),
             nn.Conv2d(in_channels, in_channels, conv_kernel_size, conv_stride,
                 conv_padding)
-            ))
-        self.model.append(nn.Sequential(
+            )
+        self.sq2 = nn.Sequential(
             AADNorm(in_channels, attr_channels, idt_channels),
             nn.ReLU(),
             nn.Conv2d(in_channels, out_channels, conv_kernel_size, conv_stride,
                 conv_padding)
-            ))
+            )
 
         if self.diff_in_out_channels:
             self.input_transform = nn.Sequential(
@@ -54,9 +53,8 @@ class AADResBlk(nn.Module):
             TYPE: Description
         """
         h, idt, attr = x
-        for sq in self.model:
-            h_out = sq(x)
-            x = (h_out, idt, attr)
+        h_out = self.sq1(x)
+        h_out = self.sq2((h_out, idt, attr))
 
         if self.diff_in_out_channels: 
             h = self.input_transform((h, idt, attr))

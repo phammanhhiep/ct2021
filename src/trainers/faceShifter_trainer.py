@@ -1,11 +1,12 @@
+import os
 import logging
-from datetime import datetime
 
 
 import torch
 from torch import nn
 
 
+from src.common import utils
 from src.models.faceShifter_model import FaceShifterModel
 from src.models.networks.loss import AEINetLoss, MultiScaleGanLoss
 
@@ -14,28 +15,43 @@ logger = logging.getLogger(__name__)
 
 
 class FaceShifterTrainer:
-    def __init__(self, opt): 
-        self.opt = opt
-        self.last_epoch = 0
-        self.trainer_opt = opt["FaceShifterTrainer"]
-        self.model = FaceShifterModel()
-        self.init_model()
-        self.create_criterion()
-        self.create_optimizer()
+    def __init__(self, opt_obj):
+        self.opt_obj = opt_obj 
+        self.opt = opt_obj.get_opt()
+        self.trainer_opt = self.opt["FaceShifterTrainer"]
+        self.initialize()
 
 
-    #TODO: provide option to initialize model when training from scratch (though models provided by torchvision and pytoch are initialized automaitcally
-    def init_model(self):
-        """Initialize model or load the trained paramaters in the given epoch
+    def initialize(self):
         """
-        self.model.load_pretrained_idt_encoder(
-            self.opt["IdtEncoder"]["pretrained_model"])
+        Create model, optimizers, and criterions; and load saved parameters if 
+        available.
+        """
+        self.last_epoch = 0
+        self.last_d_loss = self.last_g_loss = 0
+        self.checkpoint = None
+        self.device = self.trainer_opt["device"]
 
-        if self.opt["checkpoint"]["continue"]["status"]:
-            self.load_checkpoint(
-                self.opt["checkpoint"]["continue"]["name"], 
+        self.model = FaceShifterModel()
+        self.model.load_pretrained_idt_encoder(
+            self.opt["IdtEncoder"]["pretrained_model"], self.device)
+
+        if self.opt["checkpoint"]["continue"]:
+            checkpoint_id = self.opt["checkpoint"]["checkpoint_id"]
+            logger.info("Load checkpoint {}".format(checkpoint_id))
+            self.load_checkpoint(checkpoint_id, 
                 self.opt["checkpoint"]["save_dir"])
-            self.set_last_epoch()
+
+        self.model = self.model.to(self.device)
+        
+        self.create_criterion()
+        self.create_optimizer()  
+        
+        if self.checkpoint is not None:
+            self.g_optimizer.load_state_dict(
+                self.checkpoint["g_optim_state_dict"])
+            self.d_optimizer.load_state_dict(
+                self.checkpoint["d_optim_state_dict"])            
 
 
     def fit(self, dataloader):
@@ -52,19 +68,29 @@ class FaceShifterTrainer:
             for bi, batch_data in enumerate(dataloader):
                 logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
+ 
+                xs, xt, reconstructed = xs.to(self.device), xt.to(self.device),\
+                    reconstructed.to(self.device)
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
                     self.fit_g(xs, xt, reconstructed)
+                    logger.info("Complete Fit g")
+                
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
                 self.fit_d(xs, xt)
-                if bi % self.opt["checkpoint"]["save_interval"] == 0:
+                logger.info("Complete Fit d")
+                
+                if bi % self.opt["checkpoint"]["save_interval"] == 0 and bi > 0:
                     logger.info(
                         "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
-                    self.save_checkpoint("{}_{}".format(epoch, bi), save_dir)
+                    self.save_checkpoint(epoch, save_dir)
 
-            logger.info("Save checkpoint: epoch {}".format(epoch))
-            self.save_checkpoint(epoch, save_dir)                
+
+            if bi % self.opt["checkpoint"]["save_interval"] != 0:
+                logger.info("Save checkpoint: epoch {}".format(epoch))
+                self.save_checkpoint(epoch, save_dir)
+
             self.update_optimizer(epoch)
 
 
@@ -79,19 +105,22 @@ class FaceShifterTrainer:
         
         """
         y = self.model(xs, xt, mode=1)
-        xs_idt = self.model.get_face_identity(xs)
+        xs_idt = self.model.get_face_identity(xs, detach=True)
         y_idt = self.model.get_face_identity(y)
         xt_attr = self.model.get_face_attribute(xt)
         y_attr = self.model.get_face_attribute(y)
         d_output = self.model(None, None, mode=3, x_hat=y)
 
-        loss = self.g_criterion(xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,
-            reconstructed)
-
-        logger.info("G loss: {}".format(loss.item()))
+        loss, adv_loss, attr_loss, rec_loss, idt_loss = self.g_criterion(
+            xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,reconstructed)
+        self.last_g_loss = loss.item()
+        logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
+G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
 
         self.g_optimizer.zero_grad()
+        self.model.detach_d_parameters()
         loss.backward()
+        self.model.detach_d_parameters(False)
         self.g_optimizer.step()
 
 
@@ -105,15 +134,17 @@ class FaceShifterTrainer:
             xt (TYPE): a batch of target images
         """
         real_pred, generated_pred = self.model(xs, xt, mode=2)
+  
         real_loss = self.d_criterion(real_pred, True)
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
 
-        logger.info("D loss: {}".format(loss.item()))
+        self.last_d_loss = loss.item()
+        logger.info("D_loss: {}".format(loss))
 
         self.d_optimizer.zero_grad()
         loss.backward()
-        self.d_optimizer.step()     
+        self.d_optimizer.step()
 
 
     def create_optimizer(self):
@@ -132,20 +163,6 @@ class FaceShifterTrainer:
         self.d_criterion = MultiScaleGanLoss()
 
 
-    def set_last_epoch(self):
-        """Take into account the case in which a model is save in the middle of
-        an epoch, and thus bach_id is included.
-        
-        Returns:
-            TYPE: Description
-        """
-        epoch = self.opt["checkpoint"]["continue"]["name"].split("_")[1:]
-        if len(epoch) > 1:
-            self.last_epoch = int(epoch[0])
-        else:
-            self.last_epoch = int(epoch[0]) + 1
-
-
     def update_optimizer(self, epoch):
         """Update parameters of the optimizer.
         
@@ -162,16 +179,44 @@ class FaceShifterTrainer:
             epoch (TYPE): Description
             save_dir (TYPE): Description
         """
-        date_str = datetime.today().strftime('%Y%m%d')
-        name = "{}_{}".format(date_str, epoch)
-        self.model.save(name, save_dir)
+        name = "faceShifter_checkpoint_{}".format(epoch)
+        checkpoint = {
+            "epoch": epoch,
+            "g_state_dict": self.model.get_g_state_dict(),
+            "d_state_dict": self.model.get_d_state_dict(),
+            "d_loss": self.last_d_loss,
+            "g_loss": self.last_g_loss,
+            "g_optim_state_dict": self.g_optimizer.state_dict(),
+            "d_optim_state_dict": self.d_optimizer.state_dict()
+        }
+
+        utils.save_state_dict(checkpoint, name, save_dir, 
+            remove_old=self.opt["checkpoint"]["remove_old"])
+        self.opt["checkpoint"]["checkpoint_id"] = name
+        self.opt_obj.save()
 
 
-    def load_checkpoint(self, model_id, load_dir):
+    def load_checkpoint(self, checkpoint_id, load_dir):
         """Summary
         
         Args:
-            model_id (TYPE): Description
+            checkpoint_id (TYPE): Description
             load_dir (TYPE): Description
         """
-        self.model.load(model_id, load_dir)
+        name = "{}.tar".format(checkpoint_id)
+        checkpoint = utils.load_state_dict(name, load_dir, self.device)
+
+        self.last_epoch = checkpoint["epoch"]
+        self.model.load_g_state_dict(checkpoint["g_state_dict"])
+        self.model.load_d_state_dict(checkpoint["d_state_dict"])
+        self.last_d_loss = checkpoint["d_loss"]
+        self.last_g_loss = checkpoint["g_loss"]
+
+        self.checkpoint = {
+            "g_optim_state_dict": checkpoint["g_optim_state_dict"],
+            "d_optim_state_dict": checkpoint["d_optim_state_dict"]
+            }
+
+
+    def save_model(self, save_dir):
+        pass
