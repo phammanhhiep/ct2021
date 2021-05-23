@@ -3,6 +3,8 @@ import os
 import logging
 from datetime import datetime
 import argparse
+import signal
+import time
 
 
 import torch
@@ -95,6 +97,17 @@ def extract_model_from_checkpoint(pth, save_dir, device="cpu"):
     model_name = os.path.basename(pth).split(".")[0] + ".pth"
     model = checkpoint["g_state_dict"]
     torch.save(model, os.path.join(save_dir, model_name))
+
+
+class KillSignalHandler:
+    received = False
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit)
+        signal.signal(signal.SIGTERM, self.exit)
+
+
+    def exit(self, x, y):
+        self.received = True
 
 
 if __name__ == "__main__":
