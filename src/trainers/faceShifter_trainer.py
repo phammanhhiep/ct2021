@@ -51,7 +51,9 @@ class FaceShifterTrainer:
             self.g_optimizer.load_state_dict(
                 self.checkpoint["g_optim_state_dict"])
             self.d_optimizer.load_state_dict(
-                self.checkpoint["d_optim_state_dict"])            
+                self.checkpoint["d_optim_state_dict"])
+
+        self.kill_signal_handler = utils.KillSignalHandler()           
 
 
     def fit(self, dataloader):
@@ -66,6 +68,13 @@ class FaceShifterTrainer:
 
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
+                if self.kill_signal_handler.received:
+                    logger.info("Receive kill signal")
+                    if bi % self.opt["checkpoint"]["save_interval"] != 0:
+                        logger.info("Save checkpoint: epoch {}".format(epoch))
+                        self.save_checkpoint(epoch, save_dir)
+                    return 1
+
                 logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
  
