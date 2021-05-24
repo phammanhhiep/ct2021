@@ -13,13 +13,15 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def create_root_logger(level=logging.DEBUG, file_name=None):
+def create_root_logger(level=logging.DEBUG, file_name=None, root_dir="log"):
     FORMAT = logging.Formatter(
         "%(asctime)s — %(name)s — %(levelname)s — %(message)s")
     logger = logging.getLogger()
     if file_name is not None:
         timestamp = datetime.today().strftime('%Y%m%d_%H%M%S')
-        handler = logging.FileHandler("log/{}_{}.log".format(file_name, timestamp))
+
+        handler = logging.FileHandler(
+            os.path.join(root_dir, "{}_{}.log".format(file_name, timestamp)))
     else:
         handler = logging.StreamHandler(stdout)
     
