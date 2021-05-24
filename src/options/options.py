@@ -69,4 +69,4 @@ class EvalOptions(BaseOptions):
         if self.args.model:
             self.opt["model"]["name"] = self.args.model
         if self.args.model_root_dir:
-            self.opt["model"]["root_dir"] = self.args.root_dir
+            self.opt["model"]["root_dir"] = self.args.model_root_dir
