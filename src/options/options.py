@@ -4,49 +4,60 @@ import yaml
 from datetime import datetime
 
 
-#TODO: implement the class so that it work like a dictionary
-class TrainOptions:
+class BaseOptions:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         self.parser.add_argument("--option_file", type=str, 
             help="Relative path to the option file")
-        self.parser.add_argument("--checkpoint", type=str, 
-            help="The name of a checkpoint to be loaded", default=None)
-        
-        args = self.gather_arguments()
-        self.option_file = args.option_file
-        self.gather_opt()
+        self.parser.add_argument("--data_list", type=str, default=None)
+        self.parser.add_argument("--root_dir", type=str, default=None) 
 
 
     def gather_arguments(self):
-        args = self.parser.parse_args()
-        return args
+        self.args = self.parser.parse_args()
+        self.option_file = self.args.option_file
 
 
     def gather_opt(self):
         with open(self.option_file, "r") as fd:
             self.opt = yaml.load(fd, Loader=yaml.FullLoader)
 
+        if self.args.data_list and self.args.root_dir:
+            dataset_name = "NoNameDataset"
+            self.opt[dataset_name] = {
+                "data_list": self.args.data_list,
+                "root_dir": self.args.root_dir
+            }
+            self.opt["dataset"]["name"] = dataset_name
+
+
+    def get_opt(self):
+        return self.opt    
+
+
+class TrainOptions(BaseOptions):
+    def __init__(self):
+        super().__init__(self)
+        self.parser.add_argument("--checkpoint", type=str, 
+            help="The name of a checkpoint to be loaded", default=None)
+        self.gather_arguments()
+        self.gather_opt2()
+
+
+    def gather_opt2(self):
+        self.gather_opt()
+        if self.args.checkpoint:
+            self.opt["checkpoint"]["continue"] = True
+            self.opt["checkpoint"]["checkpoint_id"] = self.args.checkpoint
+
 
     def get_opt(self):
         return self.opt
 
 
-    def save(self):
-        """Save the options to disk
-        """
-        with open(self.option_file, 'w') as fd:
-            _ = yaml.dump(self.opt, fd)        
-
-
-class EvalOptions(TrainOptions):
+class EvalOptions(BaseOptions):
     def __init__(self):
-        self.parser = argparse.ArgumentParser(
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser.add_argument('--option_file', type=str, 
-            help="Relative path to the option file")
-        
-        args = self.gather_arguments()
-        self.option_file = args.option_file
-        self.gather_opt()
+        super().__init__(self)
+        self.gather_arguments()
+        self.gather_opt()    
