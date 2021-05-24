@@ -67,7 +67,7 @@ class FaceShifterTrainer:
             dataloader (TYPE): Description
         """
         source_size = int(self.opt["dataset"]["batch_size"] / 2)
-        save_dir = self.opt["checkpoint"]["save_dir"]
+        save_dir = self.opt["checkpoint"]["root_dir"]
         max_epochs = self.trainer_opt["max_epochs"]
         save_checkpoint_msg = "Save checkpoint: epoch {} - batch {}"
         save_interval = self.opt["checkpoint"]["save_interval"]
