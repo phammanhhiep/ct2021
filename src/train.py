@@ -19,6 +19,8 @@ def train(opt_obj, logger):
     trainer_name = opt["trainer"]["name"]
     dataset_name = opt["dataset"]["train"]
     
+    torch.set_num_threads(opt[trainer_name]["num_thread"])
+
     train_dataset = Dataset(opt[dataset_name]["root_dir"], 
         opt[dataset_name]["train"])
     
