@@ -33,6 +33,7 @@ def train(opt, logger):
     if trainer_name == "FaceShifterTrainer":
         trainer = FaceShifterTrainer(opt)
 
+    logger.info("Train model using dataset: {}".format(dataset_name))
     trainer.fit(dataloader)
 
 
