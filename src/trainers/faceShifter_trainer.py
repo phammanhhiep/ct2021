@@ -65,21 +65,26 @@ class FaceShifterTrainer:
         source_size = int(self.opt["dataset"]["batch_size"] / 2)
         save_dir = self.opt["checkpoint"]["save_dir"]
         max_epochs = self.trainer_opt["max_epochs"]
+        save_checkpoint_msg = "Save checkpoint: epoch {} - batch {}"
+        save_interval = self.opt["checkpoint"]["save_interval"]
 
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
+
                 if self.kill_signal_handler.received:
                     logger.info("Receive kill signal")
-                    if bi % self.opt["checkpoint"]["save_interval"] != 0:
-                        logger.info("Save checkpoint: epoch {}".format(epoch))
+                    prev_bi = bi - 1
+                    saved = (prev_bi % save_interval) == 0
+                    if prev_bi == 0 or not saved:
+                        logger.info(save_checkpoint_msg.format(epoch, prev_bi))
                         self.save_checkpoint(epoch, save_dir)
                     return 1
 
                 logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
- 
-                xs, xt, reconstructed = xs.to(self.device), xt.to(self.device),\
-                    reconstructed.to(self.device)
+                xs = xs.to(self.device)
+                xt = xt.to(self.device)
+                reconstructed = reconstructed.to(self.device)
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
@@ -90,14 +95,13 @@ class FaceShifterTrainer:
                 self.fit_d(xs, xt)
                 logger.info("Complete Fit d")
                 
-                if bi % self.opt["checkpoint"]["save_interval"] == 0 and bi > 0:
-                    logger.info(
-                        "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
+                if bi % save_interval == 0 and bi > 0:
+                    logger.info(save_checkpoint_msg.format(epoch, bi))
                     self.save_checkpoint(epoch, save_dir)
 
 
-            if bi % self.opt["checkpoint"]["save_interval"] != 0:
-                logger.info("Save checkpoint: epoch {}".format(epoch))
+            if bi % save_interval != 0:
+                logger.info(save_checkpoint_msg.format(epoch, bi))
                 self.save_checkpoint(epoch, save_dir)
 
             self.update_optimizer(epoch)
