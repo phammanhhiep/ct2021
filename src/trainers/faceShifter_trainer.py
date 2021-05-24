@@ -44,7 +44,7 @@ class FaceShifterTrainer:
             checkpoint_id = self.opt["checkpoint"]["checkpoint_id"]
             logger.info("Load checkpoint {}".format(checkpoint_id))
             self.load_checkpoint(checkpoint_id, 
-                self.opt["checkpoint"]["save_dir"])
+                self.opt["checkpoint"]["root_dir"])
 
         self.model = self.model.to(self.device)
         
