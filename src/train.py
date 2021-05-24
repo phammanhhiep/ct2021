@@ -41,7 +41,7 @@ if __name__ == "__main__":
     from src.common import utils
     opt = TrainOptions().get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
-        file_name=opt["log"]["name"])
+        file_name=opt["log"]["name"], root_dir=opt["log"]["root_dir"])
     try:
         train(opt, logger)
     except Exception as e:
