@@ -15,9 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class FaceShifterTrainer:
-    def __init__(self, opt_obj):
-        self.opt_obj = opt_obj 
-        self.opt = opt_obj.get_opt()
+    def __init__(self, opt):
+        """Summary
+        
+        Args:
+            opt (dict): Description
+        """
+        self.opt = opt
         self.trainer_opt = self.opt["FaceShifterTrainer"]
         self.initialize()
 
@@ -70,7 +74,6 @@ class FaceShifterTrainer:
 
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
-
                 if self.kill_signal_handler.received:
                     logger.info("Receive kill signal")
                     prev_bi = bi - 1
@@ -206,7 +209,6 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
         utils.save_state_dict(checkpoint, name, save_dir, 
             remove_old=self.opt["checkpoint"]["remove_old"])
         self.opt["checkpoint"]["checkpoint_id"] = name
-        self.opt_obj.save()
 
 
     def load_checkpoint(self, checkpoint_id, load_dir):
