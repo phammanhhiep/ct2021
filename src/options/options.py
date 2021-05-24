@@ -38,7 +38,7 @@ class BaseOptions:
 
 class TrainOptions(BaseOptions):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.parser.add_argument("--checkpoint", type=str, 
             help="The name of a checkpoint to be loaded", default=None)
         self.gather_arguments()
@@ -54,7 +54,7 @@ class TrainOptions(BaseOptions):
 
 class EvalOptions(BaseOptions):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.parser.add_argument("--model", type=str, 
             help="The name of a model to be evaluated", default=None)
         self.parser.add_argument("--model_root_dir", type=str, 
