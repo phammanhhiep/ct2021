@@ -20,6 +20,7 @@ def train(opt, logger):
     
     torch.set_num_threads(opt[trainer_name]["num_thread"])
 
+    logger.info("Train on dataset: {}".format(dataset_name))
     train_dataset = Dataset(opt[dataset_name]["root_dir"], 
         opt[dataset_name]["data_list"])
     
@@ -33,7 +34,6 @@ def train(opt, logger):
     if trainer_name == "FaceShifterTrainer":
         trainer = FaceShifterTrainer(opt)
 
-    logger.info("Train model using dataset: {}".format(dataset_name))
     trainer.fit(dataloader)
 
 
