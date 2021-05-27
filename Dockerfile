@@ -4,11 +4,17 @@ LABEL "maintainer"="hieppm.work@gmail.com"
 
 ENV MYUSER ct2021
 
-RUN useradd -m $MYUSER
+# Create non-root user and set permission to conda directory
+RUN useradd -m $MYUSER && \
+    chown -R $MYUSER /opt/conda 
 USER $MYUSER
 WORKDIR /home/$MYUSER
 
-# Copy applications files
+# Initialize conda
+RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc
+
+# Copy applications files and create mount directory
 COPY src ./src
 COPY requirements.txt ./
 RUN mkdir production
@@ -23,4 +29,4 @@ RUN echo "source activate env" >> ~/.bashrc && \
     conda config --append channels conda-forge && \
     conda config --append channels pytorch && \
     conda install --file requirements.txt && \
-    unset CONDA_ALWAYS_YES \
+    unset CONDA_ALWAYS_YES
