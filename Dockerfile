@@ -10,10 +10,6 @@ RUN useradd -m $MYUSER && \
 USER $MYUSER
 WORKDIR /home/$MYUSER
 
-# Initialize conda
-RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc
-
 # Copy applications files and create mount directory
 COPY src ./src
 COPY requirements.txt ./
@@ -22,8 +18,9 @@ RUN mkdir production
 # Switch shell sh (default in Linux) to bash
 SHELL ["/bin/bash", "-c"]
 
-# Give bash access to Anaconda
-RUN echo "source activate base" >> ~/.bashrc && \
+# Give bash access to Anaconda and install packages
+RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
     echo "PYTHONPATH=/home/$MYUSER" >> ~/.bashrc && \
     source /home/$MYUSER/.bashrc && \
     export CONDA_ALWAYS_YES="true" && \
