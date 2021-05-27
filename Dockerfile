@@ -1,12 +1,27 @@
-FROM python:3.7.10-slim
+FROM continuumio/miniconda3
 
 LABEL "maintainer"="hieppm.work@gmail.com"
-USER hieppm
 
-RUN mkdir -p ./projects/ct2021
-WORKDIR ./projeccts/ct2021
-COPY ./* ./
+ENV MYUSER ct2021
 
-RUN conda create -n prod -f requirements.txt
+RUN useradd -m $MYUSER
+USER $MYUSER
+WORKDIR /home/$MYUSER
 
-CMD ["./eval.sh"]
+# Copy applications files
+COPY src ./src
+COPY eval.sh ./
+COPY train.sh ./
+COPY requirements.txt ./
+
+# Switch shell sh (default in Linux) to bash
+SHELL ["/bin/bash", "-c"]
+
+# Give bash access to Anaconda
+RUN echo "source activate env" >> ~/.bashrc && \
+    source /home/$MYUSER/.bashrc && \
+    export CONDA_ALWAYS_YES="true" && \
+    conda config --append channels conda-forge && \
+    conda config --append channels pytorch && \
+    conda install --file requirements.txt && \
+    unset CONDA_ALWAYS_YES \
