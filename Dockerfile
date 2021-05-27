@@ -10,9 +10,8 @@ WORKDIR /home/$MYUSER
 
 # Copy applications files
 COPY src ./src
-COPY eval.sh ./
-COPY train.sh ./
 COPY requirements.txt ./
+RUN mkdir production
 
 # Switch shell sh (default in Linux) to bash
 SHELL ["/bin/bash", "-c"]
