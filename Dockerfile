@@ -23,7 +23,8 @@ RUN mkdir production
 SHELL ["/bin/bash", "-c"]
 
 # Give bash access to Anaconda
-RUN echo "source activate env" >> ~/.bashrc && \
+RUN echo "source activate base" >> ~/.bashrc && \
+    echo "PYTHONPATH=/home/$MYUSER" >> ~/.bashrc && \
     source /home/$MYUSER/.bashrc && \
     export CONDA_ALWAYS_YES="true" && \
     conda config --append channels conda-forge && \
