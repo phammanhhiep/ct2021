@@ -18,4 +18,4 @@ done
 export PYTHONPATH="$HOME/projects/ct2021"
 eval "$(conda shell.bash hook)"
 conda activate "$CONDA_ENV"
-python src/train.py --option_file "$OPTIONS_FILE"
+python -W ignore src/train.py --option_file "$OPTIONS_FILE"
