@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS_FILE="eval_options.yaml"
+OPTIONS_FILE="train_options.yaml"
 CONDA_ENV="ct2021"
 
 usage() {
