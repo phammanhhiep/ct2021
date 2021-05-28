@@ -32,7 +32,7 @@ def evaluate(opt, logger):
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["dataset"]["data_list"]
+    data_list = opt["dataset"]["name"]
     data_root_dir = opt["dataset"]["root_dir"]
     batch_size = opt["dataset"]["batch_size"]
     num_worker = opt["dataset"]["num_worker"]
