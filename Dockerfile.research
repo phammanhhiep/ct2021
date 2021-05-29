@@ -1,0 +1,33 @@
+# The corresponding image isn't optimal for production, but only convinient for
+# doing research or prepare for deployment. Instead copying the src directory,
+# mount the directory to the docker image.
+
+FROM continuumio/miniconda3
+
+LABEL "maintainer"="hieppm.work@gmail.com"
+
+ENV MYUSER mlops
+
+# Create non-root user and set permission to conda directory
+RUN useradd -m $MYUSER && chown -R $MYUSER /opt/conda 
+USER $MYUSER
+WORKDIR /home/$MYUSER
+
+# Switch shell sh (default in Linux) to bash
+SHELL ["/bin/bash", "-c"]
+
+# Copy applications files and create mount directory
+COPY requirements.txt ./
+RUN mkdir src
+RUN mkdir artifacts
+
+# Give bash access to Anaconda and install packages
+RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
+    echo "export PYTHONPATH=/home/$MYUSER" >> ~/.bashrc && \
+    source /home/$MYUSER/.bashrc && \
+    export CONDA_ALWAYS_YES="true" && \
+    conda config --append channels conda-forge && \
+    conda config --append channels pytorch && \
+    conda install --file requirements.txt && \
+    unset CONDA_ALWAYS_YES
