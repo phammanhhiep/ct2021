@@ -2,6 +2,7 @@ import os, logging
 from datetime import datetime
 import csv
 
+
 from torch.utils import data
 from torch import nn
 import torch
@@ -12,6 +13,7 @@ from src.options.options import EvalOptions
 from data.dataset import Dataset
 from src.models.faceShifter_model import FaceShifterModel
 from src.models.networks.head_pose_estimator import HopeNet
+from src.common import utils
 
 
 #TODO: The original research use CosFace (https://trello.com/c/jSfB5Dpz) to extract identity vector, but the current implementation use ArcFace instead
@@ -32,8 +34,9 @@ def evaluate(opt, logger):
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["dataset"]["name"]
-    data_root_dir = opt["dataset"]["root_dir"]
+    dataset_name = opt["dataset"]["name"]
+    data_list = opt[dataset_name]["data_list"]
+    data_root_dir = opt[dataset_name]["root_dir"]
     batch_size = opt["dataset"]["batch_size"]
     num_worker = opt["dataset"]["num_worker"]
     generated_save_dir = opt["generated_image"]["root_dir"]
@@ -194,4 +197,4 @@ if __name__ == "__main__":
     try:
         evaluate(opt, logger)
     except Exception as e:
-        logger.error(str(e))
+        logger.error(utils.get_traceback_msg(e))
