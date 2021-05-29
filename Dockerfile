@@ -1,19 +1,22 @@
+# NOTICE: user environments and conda init is add to .bashrc for convenience in
+# case the coresponding containers are run with interactive shells.
+
 FROM continuumio/miniconda3
 
 LABEL "maintainer"="hieppm.work@gmail.com"
 
-ENV MYUSER ct2021
+ENV MYUSER mlops
 
 # Create non-root user and set permission to conda directory
-RUN useradd -m $MYUSER && \
-    chown -R $MYUSER /opt/conda 
+RUN useradd -m $MYUSER && chown -R $MYUSER /opt/conda 
 USER $MYUSER
 WORKDIR /home/$MYUSER
 
 # Copy applications files and create mount directory
 COPY src ./src
 COPY requirements.txt ./
-RUN mkdir production
+COPY README.md ./
+RUN mkdir artifacts
 
 # Switch shell sh (default in Linux) to bash
 SHELL ["/bin/bash", "-c"]
@@ -21,7 +24,7 @@ SHELL ["/bin/bash", "-c"]
 # Give bash access to Anaconda and install packages
 RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc && \
-    echo "PYTHONPATH=/home/$MYUSER" >> ~/.bashrc && \
+    echo "export PYTHONPATH=/home/$MYUSER" >> ~/.bashrc && \
     source /home/$MYUSER/.bashrc && \
     export CONDA_ALWAYS_YES="true" && \
     conda config --append channels conda-forge && \

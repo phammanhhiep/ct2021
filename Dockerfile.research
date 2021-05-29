@@ -1,6 +1,8 @@
 # The corresponding image isn't optimal for production, but only convinient for
-# doing research or prepare for deployment. Instead copying the src directory,
-# mount the directory to the docker image.
+# doing research or preparing for deployment. Instead copying the src directory,
+# an empty directory is created, and mounted later in `docker run`.
+# NOTICE: user environments and conda init is add to .bashrc for convenience in
+# case the coresponding containers are run with interactive shells.
 
 FROM continuumio/miniconda3
 
