@@ -8,6 +8,7 @@ import torch
 from src.options.options import TrainOptions
 from src.trainers.faceShifter_trainer import FaceShifterTrainer
 from src.data.dataset import Dataset
+from src.common import utils
 
 
 #TODO: explicit pass source and target image to trainer
@@ -45,4 +46,4 @@ if __name__ == "__main__":
     try:
         train(opt, logger)
     except Exception as e:
-        logger.error(str(e))
+        logger.error(utils.get_traceback_msg(e))
