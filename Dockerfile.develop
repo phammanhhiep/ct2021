@@ -8,20 +8,23 @@ FROM continuumio/miniconda3
 
 LABEL "maintainer"="hieppm.work@gmail.com"
 
-ARG REQUIREMENT="requirements.cpu.txt"
+ARG requirements
+ARG user
 
-ENV MYUSER mlops
+# Switch shell sh (default in Linux) to bash
+SHELL ["/bin/bash", "-c"]
+
+ENV MYUSER $user
+ENV MYREQ $requirements
 
 # Create non-root user and set permission to conda directory
 RUN useradd -m $MYUSER && chown -R $MYUSER /opt/conda 
 USER $MYUSER
 WORKDIR /home/$MYUSER
 
-# Switch shell sh (default in Linux) to bash
-SHELL ["/bin/bash", "-c"]
-
 # Copy applications files and create mount directory
-COPY $REQUIREMENT ./
+COPY $requirements ./
+COPY README.md ./
 RUN mkdir src
 RUN mkdir artifacts
 
@@ -33,5 +36,5 @@ RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     export CONDA_ALWAYS_YES="true" && \
     conda config --append channels conda-forge && \
     conda config --append channels pytorch && \
-    conda install --file requirements.txt && \
+    conda install --file $MYREQ && \
     unset CONDA_ALWAYS_YES
