@@ -21,7 +21,7 @@ WORKDIR /home/$MYUSER
 SHELL ["/bin/bash", "-c"]
 
 # Copy applications files and create mount directory
-COPY REQUIREMENT ./
+COPY $REQUIREMENT ./
 RUN mkdir src
 RUN mkdir artifacts
 
