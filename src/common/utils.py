@@ -5,6 +5,7 @@ from datetime import datetime
 import argparse
 import signal
 import time
+import traceback
 
 
 import torch
@@ -99,6 +100,11 @@ def extract_model_from_checkpoint(pth, save_dir, device="cpu"):
     model_name = os.path.basename(pth).split(".")[0] + ".pth"
     model = checkpoint["g_state_dict"]
     torch.save(model, os.path.join(save_dir, model_name))
+
+
+def get_traceback_msg(ex_obj):
+    return ''.join(traceback.format_exception(
+        None, ex_obj, ex_obj.__traceback__)) 
 
 
 class KillSignalHandler:
