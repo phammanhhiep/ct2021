@@ -10,7 +10,7 @@ usage() {
 
 while getopts 'd:e:o:h' c; do
     case $c in
-        d) app_dir="$OPTARG"
+        d) app_dir="$OPTARG" ;;
         e) myenv="$OPTARG" ;;
         o) option_file="$OPTARG" ;;
         h) usage ;;
@@ -22,7 +22,7 @@ if [ -z "$myenv" ]; then
 fi
 
 if [ -z "$option_file" ]; then
-    myenv="$DEFAUL_OPTIONS_FILE"
+    option_file="$DEFAUL_OPTIONS_FILE"
 fi
 
 if [ -z "$app_dir" ]; then
