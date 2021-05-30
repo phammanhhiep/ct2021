@@ -12,7 +12,8 @@ def create_data_list(data_names, distinct_pairs, same_files):
     s = data_names[-int(same_files):]
 
     data_list = [[d[i],d[i+1],0] for i in range(0, distinct_files, 2)]
-    data_list += [[s[i],s[i],1] for i in range(same_files)]
+    if same_files > 0:
+        data_list += [[s[i],s[i],1] for i in range(same_files)]
     return data_list
 
 
