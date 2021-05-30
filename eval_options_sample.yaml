@@ -1,0 +1,26 @@
+log:
+  root_dir: "log"
+  name: "eval"
+  level: 20 # INFO=20, DEBUG=10
+statistics: "experiments/stats/{}_three_stats.csv"
+generated_image:
+  root_dir: "experiments/images/"
+model: 
+  name: "faceShifter_checkpoint_0" #YYMMDD_epoch[_batch] | IMPORTANT
+  root_dir: "experiments/models/"
+head_pose_estimator:
+  name: "hopenet_robust_alpha1"
+  root_dir: "experiments/head_pose_estimator"
+CelebAHQ:
+  root_dir: null
+  data_list: datasets/celebahq/train_data_list.csv
+FFHQ:
+  root_dir: null
+  data_list: "datasets/sample2_eval_data_list.csv"
+Sample:
+  root_dir: datasets/sample2
+  data_list: datasets/sample2_train_data_list.csv
+dataset: 
+  batch_size: 1
+  num_worker: 1
+  name: Sample # IMPORTANT
