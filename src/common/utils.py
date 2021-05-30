@@ -123,9 +123,11 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--extract_model', type=str, 
         help="Relative path to checkpoint")
+    parser.add_argument('--extracted_model_save_dir', type=str, 
+        help="Relative path to checkpoint")
 
     args = parser.parse_args()
 
     if args.extract_model:
         checkpoint = args.extract_model
-        extract_model_from_checkpoint(checkpoint, "experiments/models/")
+        extract_model_from_checkpoint(checkpoint, args.extracted_model_save_dir)
