@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAUL_OPTIONS_FILE="/mnt/disks/data/ct2021/options/train_options.yaml"
+DEFAUL_OPTIONS_FILE="/mnt/disks/data1/ct2021/options/train_options.yaml"
 DEFAULT_CONDA_ENV="ct2021"
 DEFAULT_APP_DIR="$HOME/projects/ct2021"
 
