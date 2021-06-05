@@ -1,6 +1,7 @@
 #!/bin/bash
 
-DEFAUL_OPTIONS_FILE="/mnt/disks/data/ct2021/options/eval_options.yaml"
+DEFAULT_ARTIFACTS="$HOME/projects/ct2021/artifacts"
+DEFAULT_OPTIONS_FILE="$DEFAULT_ARTIFACTS/options/eval_options.yaml"
 DEFAULT_CONDA_ENV="ct2021"
 DEFAULT_APP_DIR="$HOME/projects/ct2021"
 
@@ -10,7 +11,7 @@ usage() {
 
 while getopts 'd:e:o:h' c; do
     case $c in
-        d) app_dir="$OPTARG"
+        d) app_dir="$OPTARG" ;;
         e) myenv="$OPTARG" ;;
         o) option_file="$OPTARG" ;;
         h) usage ;;
@@ -22,7 +23,7 @@ if [ -z "$myenv" ]; then
 fi
 
 if [ -z "$option_file" ]; then
-    myenv="$DEFAUL_OPTIONS_FILE"
+    option_file="$DEFAULT_OPTIONS_FILE"
 fi
 
 if [ -z "$app_dir" ]; then
@@ -32,4 +33,4 @@ fi
 export PYTHONPATH="$app_dir"
 eval "$(conda shell.bash hook)"
 conda activate "$myenv"
-python -W ignore src/eval.py --option_file "$option_file"
+python -W ignore "$app_dir/src/eval.py" --option_file "$option_file"
