@@ -1,6 +1,7 @@
 #!/bin/bash
 
-DEFAUL_OPTIONS_FILE="/mnt/disks/data1/ct2021/options/train_options.yaml"
+DEFAULT_ARTIFACTS="$HOME/projects/ct2021/artifacts"
+DEFAULT_OPTIONS_FILE="$DEFAULT_ARTIFACTS/options/train_options.yaml"
 DEFAULT_CONDA_ENV="ct2021"
 DEFAULT_APP_DIR="$HOME/projects/ct2021"
 
@@ -22,7 +23,7 @@ if [ -z "$myenv" ]; then
 fi
 
 if [ -z "$option_file" ]; then
-    option_file="$DEFAUL_OPTIONS_FILE"
+    option_file="$DEFAULT_OPTIONS_FILE"
 fi
 
 if [ -z "$app_dir" ]; then
@@ -32,4 +33,4 @@ fi
 export PYTHONPATH="$app_dir"
 eval "$(conda shell.bash hook)"
 conda activate "$myenv"
-python -W ignore src/train.py --option_file "$option_file"
+python -W ignore "$app_dir/src/train.py" --option_file "$option_file"
