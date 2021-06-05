@@ -129,9 +129,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Model training & experiments
+# Artifacts of model training and evaluation
 artifacts/
-
-# options
-train_options.yaml
-eval_options.yaml
+artifacts
