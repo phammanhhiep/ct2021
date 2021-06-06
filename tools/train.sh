@@ -35,4 +35,4 @@ if [ "$myenv" != "base" ]; then
     conda activate "$myenv"
 fi
 cd "$app_dir"
-python -W ignore "src/train.py" --option_file "$option_file"
+python -W ignore "$app_dir/src/train.py" --option_file "$option_file"
