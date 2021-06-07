@@ -35,4 +35,4 @@ if [ "$myenv" != "base" ]; then
 fi
 cd "$app_dir"
 
-python -W ignore "$app_dir/src/eval.py" --option_file "$option_file"
+python -W ignore "src/eval.py" --option_file "$option_file"
