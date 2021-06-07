@@ -8,7 +8,7 @@ import random
 #TODO: contruct new distict pairs from previous considered files if 2*distinct_pairs > len(data_names)
 def create_data_list(data_names, distinct_pairs, same_files):
     data_list = []
-    data_names = random.shuffle(data_names)
+    random.shuffle(data_names)
     distinct_files = int(distinct_pairs * 2)
     d = data_names[: distinct_files]
     data_list = [[d[i],d[i+1],0] for i in range(0, distinct_files, 2)]
