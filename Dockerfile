@@ -23,9 +23,10 @@ USER $MYUSER
 WORKDIR /home/$MYUSER
 
 # Copy applications files and create mount directory
-RUN mkdir -p $PROJECT_DIR/artifacts
+RUN mkdir -p $PROJECT_DIR/artifacts \
+    $PROJECT_DIR/tools
 COPY src $PROJECT_DIR/src
-COPY tools $PROJECT_DIR/tools
+COPY scripts $PROJECT_DIR/scripts
 COPY Dockerfile $MYREQ README.md $PROJECT_DIR/
 
 # Give bash access to Anaconda and install packages

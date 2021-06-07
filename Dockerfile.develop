@@ -25,7 +25,7 @@ WORKDIR /home/$MYUSER
 
 # Copy applications files and create mount directory
 RUN mkdir -p $PROJECT_DIR/src \
-    $PROJECT_DIR/tools \
+    $PROJECT_DIR/scripts \
     $PROJECT_DIR/artifacts
 COPY Dockerfile.develop $MYREQ README.md $PROJECT_DIR/
 
