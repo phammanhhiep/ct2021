@@ -116,7 +116,7 @@ def save_loss(result, name, root_dir):
     """
     date_str = datetime.today().strftime('%Y-%m-%d')
     time_str = datetime.today().strftime('%H:%M:%S')
-    name = "{}_{}.dat".format(date_str, name)
+    name = "{}_{}.dat".format(datetime.today().strftime('%Y%m%d'), name)
     loss_dir = "{}/loss".format(root_dir)
 
     if not os.path.exists(loss_dir):
