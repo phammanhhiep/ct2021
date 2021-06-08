@@ -248,4 +248,5 @@ class FaceShifterTrainer:
 
 
     def save_d_loss(self, loss):
+        loss = [i.item() for i in loss]
         utils.save_loss(loss, "d", self.log_dir)
