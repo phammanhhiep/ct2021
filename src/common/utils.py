@@ -114,7 +114,7 @@ def save_loss(result, name, root_dir):
         result (list): Description
         root_dir (TYPE): Description
     """
-    date_str = datetime.today().strftime('%Y%m%d')
+    date_str = datetime.today().strftime('%Y-%m-%d')
     time_str = datetime.today().strftime('%H:%M:%S')
     name = "{}_{}.dat".format(date_str, name)
     loss_dir = "{}/loss".format(root_dir)
