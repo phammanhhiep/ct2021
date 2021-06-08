@@ -6,6 +6,7 @@ import argparse
 import signal
 import time
 import traceback
+import csv
 
 
 import torch
@@ -20,7 +21,6 @@ def create_root_logger(level=logging.DEBUG, file_name=None, root_dir="log"):
     logger = logging.getLogger()
     if file_name is not None:
         timestamp = datetime.today().strftime('%Y%m%d_%H%M%S')
-
         handler = logging.FileHandler(
             os.path.join(root_dir, "{}_{}.log".format(file_name, timestamp)))
     else:
@@ -104,7 +104,30 @@ def extract_model_from_checkpoint(pth, save_dir, device="cpu"):
 
 def get_traceback_msg(ex_obj):
     return ''.join(traceback.format_exception(
-        None, ex_obj, ex_obj.__traceback__)) 
+        None, ex_obj, ex_obj.__traceback__))
+
+
+def save_loss(result, name, root_dir):
+    """Summary
+    
+    Args:
+        result (list): Description
+        root_dir (TYPE): Description
+    """
+    date_str = datetime.today().strftime('%Y%m%d')
+    time_str = datetime.today().strftime('%H:%M:%S')
+    name = "{}_{}.dat".format(date_str, name)
+    loss_dir = "{}/loss".format(root_dir)
+
+    if not os.path.exists(loss_dir):
+        os.mkdir(loss_dir)
+
+    result = [date_str, time_str] + result
+    pth = "{}/{}".format(loss_dir, name)
+
+    with open(pth, mode="a", newline="") as fd:
+        writer = csv.writer(fd, delimiter=" ")
+        writer.writerow(result)
 
 
 class KillSignalHandler:

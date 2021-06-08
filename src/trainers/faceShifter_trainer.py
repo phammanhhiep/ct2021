@@ -35,6 +35,7 @@ class FaceShifterTrainer:
         self.last_d_loss = self.last_g_loss = 0
         self.checkpoint = None
         self.device = self.trainer_opt["device"]
+        self.log_dir = self.opt["log"]["root_dir"]
 
         self.model = FaceShifterModel()
         self.model.load_pretrained_idt_encoder(
@@ -97,7 +98,7 @@ class FaceShifterTrainer:
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
                 self.fit_d(xs, xt)
                 logger.info("Complete Fit d")
-                
+
                 if bi % save_interval == 0 and bi > 0:
                     logger.info(save_checkpoint_msg.format(epoch, bi))
                     self.save_checkpoint(epoch, save_dir)
@@ -129,9 +130,11 @@ class FaceShifterTrainer:
 
         loss, adv_loss, attr_loss, rec_loss, idt_loss = self.g_criterion(
             xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,reconstructed)
+        
+        logger.info("Save g loss")
+        self.save_g_loss([adv_loss, attr_loss, rec_loss, idt_loss, loss])
+
         self.last_g_loss = loss.item()
-        logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
-G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
 
         self.g_optimizer.zero_grad()
         self.model.detach_d_parameters()
@@ -155,8 +158,10 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
 
+        logger.info("Save d loss")
+        self.save_d_loss([loss])
+
         self.last_d_loss = loss.item()
-        logger.info("D_loss: {}".format(loss))
 
         self.d_optimizer.zero_grad()
         loss.backward()
@@ -235,3 +240,12 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
 
     def save_model(self, save_dir):
         pass
+
+
+    def save_g_loss(self, loss):
+        loss = [i.item() for i in loss]
+        utils.save_loss(loss, "g", self.log_dir)
+
+
+    def save_d_loss(self, loss):
+        utils.save_loss(loss, "d", self.log_dir)
