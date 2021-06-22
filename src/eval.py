@@ -2,6 +2,7 @@ import os, logging
 from datetime import datetime
 import csv
 
+
 from torch.utils import data
 from torch import nn
 import torch
@@ -12,6 +13,7 @@ from src.options.options import EvalOptions
 from data.dataset import Dataset
 from src.models.faceShifter_model import FaceShifterModel
 from src.models.networks.head_pose_estimator import HopeNet
+from src.common import utils
 
 
 #TODO: The original research use CosFace (https://trello.com/c/jSfB5Dpz) to extract identity vector, but the current implementation use ArcFace instead
@@ -24,18 +26,20 @@ def evaluate(opt, logger):
         opt (TYPE): Description
         logger (TYPE): Description
     """
-    model_id = opt["model"]["model_id"]
-    model_load_dir = opt["model"]["load_dir"]
+    model_id = opt["model"]["name"]
+    model_load_dir = opt["model"]["root_dir"]
 
     hp_model_id = opt["head_pose_estimator"]["name"]
-    hp_model_load_dir = opt["head_pose_estimator"]["load_dir"]
+    hp_model_load_dir = opt["head_pose_estimator"]["root_dir"]
 
     facial_expression_estimator = None #TODO: provide facial_expression_estimator
 
-    data_list = opt["dataset"]["data_list"]
-    data_root_dir = opt["dataset"]["root_dir"]
+    dataset_name = opt["dataset"]["name"]
+    data_list = opt[dataset_name]["data_list"]
+    data_root_dir = opt[dataset_name]["root_dir"]
     batch_size = opt["dataset"]["batch_size"]
     num_worker = opt["dataset"]["num_worker"]
+    generated_save_dir = opt["generated_image"]["root_dir"]
 
     date_str = datetime.today().strftime('%Y%m%d')
     img_name =  "{}_{}_" + date_str + ".png"
@@ -66,7 +70,7 @@ def evaluate(opt, logger):
     generated_count = len(dataset)
 
     for bi, batch_data in enumerate(dataloader):
-        logger.info("Generate images from batch #{}".format(bi))
+        logger.info("Fetch batch: {}".format(bi))
         xs, xt, reconstructed, xs_names, xt_names = batch_data
         
         with torch.no_grad():
@@ -77,8 +81,8 @@ def evaluate(opt, logger):
                 facial_expression_estimator)
 
         logger.info("Save {} generated images".format(x_hat.size()[0]))
-        save_generated_images((x_hat, xs_names, xt_names), img_name, bi,
-            opt["generated_image"]["save_dir"])
+        save_generated_images((x_hat, xs_names, xt_names), img_name, bi, 
+            generated_save_dir)
 
     idt_measure = idt_retrieval(idt_dist, real_idt, generated_idt) / generated_count
     hp_measure = hp_measure / generated_count
@@ -187,10 +191,10 @@ def save_evaluation_results(stat, pth):
 
 if __name__ == "__main__":
     from src.common import utils
-    opt = EvalOptions(); opt = opt.get_opt()
+    opt = EvalOptions().get_opt()
     logger = utils.create_root_logger(level=opt["log"]["level"], 
-        file_name=opt["log"]["file_name"])
+        file_name=opt["log"]["name"], root_dir=opt["log"]["root_dir"])
     try:
         evaluate(opt, logger)
     except Exception as e:
-        logger.error(str(e))
+        logger.error(utils.get_traceback_msg(e))

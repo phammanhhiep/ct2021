@@ -129,16 +129,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Raw data, transformed data
-datasets/
-
-# log
-log/
-
-# Model training & experiments
-checkpoint/
-experiments/
-
-# options
-train_options.yaml
-eval_options.yaml
+# Artifacts of model training and evaluation
+artifacts/
+artifacts

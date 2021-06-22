@@ -1,18 +1,20 @@
 import os, argparse, csv
-import numpy as np
+import argparse
+import csv
+import random
 
 
 #TODO: check to make sure 2*distinct_pairs <= len(data_names) and same_pairs <= len(data_names)
 #TODO: contruct new distict pairs from previous considered files if 2*distinct_pairs > len(data_names)
 def create_data_list(data_names, distinct_pairs, same_files):
     data_list = []
-    data_names = np.random.permutation(data_names)
+    random.shuffle(data_names)
     distinct_files = int(distinct_pairs * 2)
     d = data_names[: distinct_files]
-    s = data_names[-int(same_files):]
-
     data_list = [[d[i],d[i+1],0] for i in range(0, distinct_files, 2)]
-    data_list += [[s[i],s[i],1] for i in range(same_files)]
+    if same_files > 0:
+        s = data_names[-int(same_files):]
+        data_list += [[s[i],s[i],1] for i in range(same_files)]
     return data_list
 
 

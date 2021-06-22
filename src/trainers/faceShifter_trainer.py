@@ -15,9 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class FaceShifterTrainer:
-    def __init__(self, opt_obj):
-        self.opt_obj = opt_obj 
-        self.opt = opt_obj.get_opt()
+    def __init__(self, opt):
+        """Summary
+        
+        Args:
+            opt (dict): Description
+        """
+        self.opt = opt
         self.trainer_opt = self.opt["FaceShifterTrainer"]
         self.initialize()
 
@@ -31,6 +35,7 @@ class FaceShifterTrainer:
         self.last_d_loss = self.last_g_loss = 0
         self.checkpoint = None
         self.device = self.trainer_opt["device"]
+        self.log_dir = self.opt["log"]["root_dir"]
 
         self.model = FaceShifterModel()
         self.model.load_pretrained_idt_encoder(
@@ -40,7 +45,7 @@ class FaceShifterTrainer:
             checkpoint_id = self.opt["checkpoint"]["checkpoint_id"]
             logger.info("Load checkpoint {}".format(checkpoint_id))
             self.load_checkpoint(checkpoint_id, 
-                self.opt["checkpoint"]["save_dir"])
+                self.opt["checkpoint"]["root_dir"])
 
         self.model = self.model.to(self.device)
         
@@ -51,7 +56,9 @@ class FaceShifterTrainer:
             self.g_optimizer.load_state_dict(
                 self.checkpoint["g_optim_state_dict"])
             self.d_optimizer.load_state_dict(
-                self.checkpoint["d_optim_state_dict"])            
+                self.checkpoint["d_optim_state_dict"])
+
+        self.kill_signal_handler = utils.KillSignalHandler()           
 
 
     def fit(self, dataloader):
@@ -61,16 +68,27 @@ class FaceShifterTrainer:
             dataloader (TYPE): Description
         """
         source_size = int(self.opt["dataset"]["batch_size"] / 2)
-        save_dir = self.opt["checkpoint"]["save_dir"]
+        save_dir = self.opt["checkpoint"]["root_dir"]
         max_epochs = self.trainer_opt["max_epochs"]
+        save_checkpoint_msg = "Save checkpoint: epoch {} - batch {}"
+        save_interval = self.opt["checkpoint"]["save_interval"]
 
         for epoch in range(self.last_epoch, max_epochs):
             for bi, batch_data in enumerate(dataloader):
+                if self.kill_signal_handler.received:
+                    logger.info("Receive kill signal")
+                    prev_bi = bi - 1
+                    saved = (prev_bi % save_interval) == 0
+                    if prev_bi == 0 or not saved:
+                        logger.info(save_checkpoint_msg.format(epoch, prev_bi))
+                        self.save_checkpoint(epoch, save_dir)
+                    return 1
+
                 logger.info("Fetch batch: epoch {} - batch {}".format(epoch, bi))
                 xs, xt, reconstructed = batch_data
- 
-                xs, xt, reconstructed = xs.to(self.device), xt.to(self.device),\
-                    reconstructed.to(self.device)
+                xs = xs.to(self.device)
+                xt = xt.to(self.device)
+                reconstructed = reconstructed.to(self.device)
                 
                 if bi % self.trainer_opt["d_step_per_g"] == 0:
                     logger.info("Fit g: epoch {} - batch {}".format(epoch, bi))
@@ -80,15 +98,14 @@ class FaceShifterTrainer:
                 logger.info("Fit d: epoch {} - batch {}".format(epoch, bi))
                 self.fit_d(xs, xt)
                 logger.info("Complete Fit d")
-                
-                if bi % self.opt["checkpoint"]["save_interval"] == 0 and bi > 0:
-                    logger.info(
-                        "Save checkpoint: epoch {} - batch {}".format(epoch, bi))
+
+                if bi % save_interval == 0 and bi > 0:
+                    logger.info(save_checkpoint_msg.format(epoch, bi))
                     self.save_checkpoint(epoch, save_dir)
 
 
-            if bi % self.opt["checkpoint"]["save_interval"] != 0:
-                logger.info("Save checkpoint: epoch {}".format(epoch))
+            if bi % save_interval != 0:
+                logger.info(save_checkpoint_msg.format(epoch, bi))
                 self.save_checkpoint(epoch, save_dir)
 
             self.update_optimizer(epoch)
@@ -113,9 +130,11 @@ class FaceShifterTrainer:
 
         loss, adv_loss, attr_loss, rec_loss, idt_loss = self.g_criterion(
             xt, y, xt_attr, y_attr, xs_idt, y_idt, d_output,reconstructed)
+        
+        logger.info("Save g loss")
+        self.save_g_loss([adv_loss, attr_loss, rec_loss, idt_loss, loss])
+
         self.last_g_loss = loss.item()
-        logger.info("adv_loss {}, attr_loss {}, rec_loss {}, idt_loss {}, \
-G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))        
 
         self.g_optimizer.zero_grad()
         self.model.detach_d_parameters()
@@ -139,8 +158,10 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
         generated_loss = self.d_criterion(generated_pred, False)
         loss = real_loss + generated_loss
 
+        logger.info("Save d loss")
+        self.save_d_loss([loss])
+
         self.last_d_loss = loss.item()
-        logger.info("D_loss: {}".format(loss))
 
         self.d_optimizer.zero_grad()
         loss.backward()
@@ -193,7 +214,6 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
         utils.save_state_dict(checkpoint, name, save_dir, 
             remove_old=self.opt["checkpoint"]["remove_old"])
         self.opt["checkpoint"]["checkpoint_id"] = name
-        self.opt_obj.save()
 
 
     def load_checkpoint(self, checkpoint_id, load_dir):
@@ -220,3 +240,13 @@ G_loss {}".format(adv_loss, attr_loss, rec_loss, idt_loss, loss))
 
     def save_model(self, save_dir):
         pass
+
+
+    def save_g_loss(self, loss):
+        loss = [i.item() for i in loss]
+        utils.save_loss(loss, "g", self.log_dir)
+
+
+    def save_d_loss(self, loss):
+        loss = [i.item() for i in loss]
+        utils.save_loss(loss, "d", self.log_dir)

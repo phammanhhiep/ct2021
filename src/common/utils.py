@@ -3,6 +3,10 @@ import os
 import logging
 from datetime import datetime
 import argparse
+import signal
+import time
+import traceback
+import csv
 
 
 import torch
@@ -11,13 +15,14 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def create_root_logger(level=logging.DEBUG, file_name=None):
+def create_root_logger(level=logging.DEBUG, file_name=None, root_dir="log"):
     FORMAT = logging.Formatter(
         "%(asctime)s — %(name)s — %(levelname)s — %(message)s")
     logger = logging.getLogger()
     if file_name is not None:
         timestamp = datetime.today().strftime('%Y%m%d_%H%M%S')
-        handler = logging.FileHandler("log/{}_{}.log".format(file_name, timestamp))
+        handler = logging.FileHandler(
+            os.path.join(root_dir, "{}_{}.log".format(file_name, timestamp)))
     else:
         handler = logging.StreamHandler(stdout)
     
@@ -97,14 +102,55 @@ def extract_model_from_checkpoint(pth, save_dir, device="cpu"):
     torch.save(model, os.path.join(save_dir, model_name))
 
 
+def get_traceback_msg(ex_obj):
+    return ''.join(traceback.format_exception(
+        None, ex_obj, ex_obj.__traceback__))
+
+
+def save_loss(result, name, root_dir):
+    """Summary
+    
+    Args:
+        result (list): Description
+        root_dir (TYPE): Description
+    """
+    date_str = datetime.today().strftime('%Y-%m-%d')
+    time_str = datetime.today().strftime('%H:%M:%S')
+    name = "{}_{}.dat".format(datetime.today().strftime('%Y%m%d'), name)
+    loss_dir = "{}/loss".format(root_dir)
+
+    if not os.path.exists(loss_dir):
+        os.mkdir(loss_dir)
+
+    result = [date_str, time_str] + result
+    pth = "{}/{}".format(loss_dir, name)
+
+    with open(pth, mode="a", newline="") as fd:
+        writer = csv.writer(fd, delimiter=" ")
+        writer.writerow(result)
+
+
+class KillSignalHandler:
+    received = False
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit)
+        signal.signal(signal.SIGTERM, self.exit)
+
+
+    def exit(self, x, y):
+        self.received = True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--extract_model', type=str, 
+        help="Relative path to checkpoint")
+    parser.add_argument('--extracted_model_save_dir', type=str, 
         help="Relative path to checkpoint")
 
     args = parser.parse_args()
 
     if args.extract_model:
         checkpoint = args.extract_model
-        extract_model_from_checkpoint(checkpoint, "experiments/models/")
+        extract_model_from_checkpoint(checkpoint, args.extracted_model_save_dir)

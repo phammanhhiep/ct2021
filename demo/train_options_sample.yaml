@@ -1,0 +1,44 @@
+AEINetLoss:
+  weights:
+    AttrLoss: 1
+    IdtLoss: 1
+    RecLoss: 1
+CelebAHQ:
+  root_dir: null # CHANGE
+  data_list: datasets/celebahq/train_data_list.csv 
+FFHQ:
+  root_dir: null # CHANGE
+  data_list: datasets/ffhq/train_data_list.csv
+FaceShifterTrainer:
+  num_thread: 2 # CHANGE
+  d_step_per_g: 2 # CHANGE
+  device: cpu
+  max_epochs: 100
+  optim:
+    betas:
+    - 0.0
+    - 1.0
+    lr: 0.1
+    name: Adam
+IdtEncoder:
+  name: ArcFace
+  pretrained_model: experiments/idt_encoder/ArcFace.pth
+Sample:
+  root_dir: datasets/sample
+  data_list: datasets/sample/train_data_list.csv
+checkpoint:
+  checkpoint_id: faceShifter_checkpoint_0
+  continue: true # CHANGE
+  remove_old: false
+  root_dir: null # CHANGE
+  save_interval: 10 # CHANGE
+dataset:
+  batch_size: 32 # CHANGE
+  num_worker: 0 # CHANGE
+  name: FFHQ # CHANGE
+log:
+  name: train # CHANGE
+  level: 20
+  root_dir: log
+trainer:
+  name: FaceShifterTrainer
