@@ -1,4 +1,7 @@
 # CT2021
+## Summary
+The project is based on the research "FaceShifter: Towards High Fidelity And Occlusion Aware Face Swapping (Li et al)", with the goal to replicate the research results and improve if possible.
+
 ## Code Structure
 - script/setup.sh: create a conda environment, and install required packages.
 - script/train.sh, script/eval.sh: entry points to train and evaluate the model respectively.
